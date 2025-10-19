@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: roomflow-postgres
+    environment:
+      POSTGRES_DB: roomflow_db
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: fialka
+    ports:
+      - "5435:5432"
+    volumes:
+      - roomflow-pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  app:
+    container_name: roomflow-app
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - db
+    restart: on-failure
+
+volumes:
+  roomflow-pg-data:
