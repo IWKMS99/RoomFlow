@@ -1,9 +1,9 @@
 package iwkms.roomflow.modules.booking.impl.service;
 
-import iwkms.roomflow.exception.ResourceNotFoundException;
-import iwkms.roomflow.modules.booking.api.dto.*;
+import iwkms.roomflow.modules.booking.api.dto.RoomInScheduleViewDto;
+import iwkms.roomflow.modules.booking.api.dto.ScheduleViewDto;
+import iwkms.roomflow.modules.booking.api.dto.TimeSlotViewDto;
 import iwkms.roomflow.modules.booking.impl.domain.Booking;
-import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
 import iwkms.roomflow.modules.booking.impl.domain.Room;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
 import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
@@ -21,42 +21,16 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class BookingService {
+@Transactional(readOnly = true)
+public class ScheduleService {
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
 
-    @Transactional
-    public Booking bookRoom(BookRoomDto command) {
-        // TODO: Валидация пересечений
-        Booking booking = Booking.builder()
-                .id(UUID.randomUUID())
-                .roomId(command.roomId())
-                .userId(command.userId())
-                .startTime(command.startTime())
-                .endTime(command.endTime())
-                .status(BookingStatus.CONFIRMED)
-                .build();
-        return bookingRepository.save(booking);
-    }
-
-    @Transactional
-    public void cancelBooking(CancelBookingDto command) {
-        Booking booking = bookingRepository.findById(command.bookingId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Booking with id " + command.bookingId() + " not found"));
-        // TODO: Проверка прав
-        booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-    }
-
-    @Transactional(readOnly = true)
     public List<Booking> findByUserId(UUID userId) {
         return bookingRepository.findByUserId(userId);
     }
 
-
-    @Transactional(readOnly = true)
     public ScheduleViewDto getScheduleForDate(LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
