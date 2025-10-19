@@ -1,4 +1,4 @@
-package iwkms.roomflow.roomflow;
+package iwkms.roomflow;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
