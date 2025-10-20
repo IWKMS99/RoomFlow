@@ -148,4 +148,23 @@ class BookingControllerIT {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    @DisplayName("POST /bookings: должен вернуть 400 Bad Request, если время начала после времени окончания")
+    void shouldReturnBadRequestWhenStartTimeIsAfterEndTime() throws Exception {
+        UUID existingRoomId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        CreateBookingRequestDto invalidRequest = new CreateBookingRequestDto(
+                existingRoomId,
+                LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withNano(0),
+                LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withNano(0)
+        );
+
+        mockMvc.perform(post("/api/v1/bookings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Validation failed")))
+                .andExpect(jsonPath("$.violations[0].description", is("End time must be after start time")));
+    }
 }
