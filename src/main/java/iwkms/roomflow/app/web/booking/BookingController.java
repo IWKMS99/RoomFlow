@@ -12,6 +12,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import static iwkms.roomflow.util.Constants.Api.MOCK_USER_ID;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -23,10 +25,8 @@ public class BookingController implements BookingApiContract {
     @PostMapping("/bookings")
     public ResponseEntity<BookingResponseDto> createBooking(@Valid @RequestBody CreateBookingRequestDto request) {
         // TODO: Получить userId из Security Context
-        UUID currentUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-
         BookRoomDto command = new BookRoomDto(
-                currentUserId,
+                MOCK_USER_ID,
                 request.roomId(),
                 request.startTime(),
                 request.endTime()
@@ -39,8 +39,7 @@ public class BookingController implements BookingApiContract {
     @DeleteMapping("/bookings/{bookingId}")
     public ResponseEntity<Void> cancelBooking(@PathVariable UUID bookingId) {
         // TODO: Получить userId из Security Context
-        UUID currentUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        CancelBookingDto command = new CancelBookingDto(bookingId, currentUserId);
+        CancelBookingDto command = new CancelBookingDto(bookingId, MOCK_USER_ID);
         bookingApi.cancelBooking(command);
         return ResponseEntity.noContent().build();
     }
@@ -49,8 +48,7 @@ public class BookingController implements BookingApiContract {
     @GetMapping("/my-bookings")
     public ResponseEntity<List<BookingResponseDto>> getMyBookings() {
         // TODO: Получить userId из Security Context
-        UUID currentUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        List<BookingResponseDto> response = bookingApi.findByUserId(currentUserId);
+        List<BookingResponseDto> response = bookingApi.findByUserId(MOCK_USER_ID);
         return ResponseEntity.ok(response);
     }
 

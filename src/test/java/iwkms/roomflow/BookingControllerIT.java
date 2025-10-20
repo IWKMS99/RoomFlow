@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static iwkms.roomflow.util.Constants.Test.*;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,11 +47,8 @@ class BookingControllerIT {
                     " должен создать бронирование для 'текущего' пользователя и успешно его получить"
     )
     void shouldCreateBookingAndRetrieveItSuccessfully() throws Exception {
-        UUID existingRoomId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        UUID currentUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-
         CreateBookingRequestDto createRequest = new CreateBookingRequestDto(
-                existingRoomId,
+                ROOM_A_ID,
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withNano(0),
                 LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withNano(0)
         );
@@ -61,29 +59,27 @@ class BookingControllerIT {
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").isNotEmpty())
-                .andExpect(jsonPath("$.roomId", is(existingRoomId.toString())))
-                .andExpect(jsonPath("$.userId", is(currentUserId.toString())))
+                .andExpect(jsonPath("$.roomId", is(ROOM_A_ID.toString())))
+                .andExpect(jsonPath("$.userId", is(USER_ID_1.toString())))
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
         mockMvc.perform(get("/api/v1/my-bookings")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].roomId", is(existingRoomId.toString())))
-                .andExpect(jsonPath("$[0].userId", is(currentUserId.toString())));
+                .andExpect(jsonPath("$[0].roomId", is(ROOM_A_ID.toString())))
+                .andExpect(jsonPath("$[0].userId", is(USER_ID_1.toString())));
     }
 
     @Test
     @DisplayName("GET /schedule: должен вернуть корректную сетку занятости для указанной даты")
     void shouldReturnCorrectScheduleForDate() throws Exception {
         LocalDate testDate = LocalDate.now().plusDays(1);
-        UUID roomA_Id = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        UUID testUserId = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
         Booking bookingForRoomA = Booking.builder()
                 .id(UUID.randomUUID())
-                .roomId(roomA_Id)
-                .userId(testUserId)
+                .roomId(ROOM_A_ID)
+                .userId(USER_ID_2)
                 .startTime(testDate.atTime(10, 0))
                 .endTime(testDate.atTime(11, 0))
                 .status(BookingStatus.CONFIRMED)
@@ -118,13 +114,10 @@ class BookingControllerIT {
     @Test
     @DisplayName("DELETE /bookings/{id}: должен успешно отменить существующее бронирование")
     void shouldCancelBookingSuccessfully() throws Exception {
-        UUID roomA_Id = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        UUID testUserId = UUID.fromString("00000000-0000-0000-0000-000000000003");
-
         Booking bookingToCancel = Booking.builder()
                 .id(UUID.randomUUID())
-                .roomId(roomA_Id)
-                .userId(testUserId)
+                .roomId(ROOM_A_ID)
+                .userId(USER_ID_3)
                 .startTime(LocalDateTime.now().plusDays(2).withHour(14).withMinute(0).withNano(0))
                 .endTime(LocalDateTime.now().plusDays(2).withHour(15).withMinute(0).withNano(0))
                 .status(BookingStatus.CONFIRMED)
@@ -152,10 +145,8 @@ class BookingControllerIT {
     @Test
     @DisplayName("POST /bookings: должен вернуть 400 Bad Request, если время начала после времени окончания")
     void shouldReturnBadRequestWhenStartTimeIsAfterEndTime() throws Exception {
-        UUID existingRoomId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
         CreateBookingRequestDto invalidRequest = new CreateBookingRequestDto(
-                existingRoomId,
+                ROOM_A_ID,
                 LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withNano(0),
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withNano(0)
         );
@@ -172,13 +163,10 @@ class BookingControllerIT {
     @Test
     @DisplayName("POST /bookings: должен вернуть 409 Conflict при попытке забронировать уже занятое время")
     void shouldReturnConflictWhenBookingOverlaps() throws Exception {
-        UUID roomId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        UUID firstUserId = UUID.fromString("00000000-0000-0000-0000-000000000004");
-
         Booking initialBooking = Booking.builder()
                 .id(UUID.randomUUID())
-                .roomId(roomId)
-                .userId(firstUserId)
+                .roomId(ROOM_A_ID)
+                .userId(USER_ID_4)
                 .startTime(LocalDateTime.now().plusDays(3).withHour(12).withMinute(0).withNano(0))
                 .endTime(LocalDateTime.now().plusDays(3).withHour(13).withMinute(0).withNano(0))
                 .status(BookingStatus.CONFIRMED)
@@ -186,7 +174,7 @@ class BookingControllerIT {
         bookingRepository.saveAndFlush(initialBooking);
 
         CreateBookingRequestDto conflictingRequest = new CreateBookingRequestDto(
-                roomId,
+                ROOM_A_ID,
                 LocalDateTime.now().plusDays(3).withHour(12).withMinute(30).withNano(0),
                 LocalDateTime.now().plusDays(3).withHour(13).withMinute(30).withNano(0)
         );

@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static iwkms.roomflow.util.Constants.Schedule.WORKING_DAY_END;
+import static iwkms.roomflow.util.Constants.Schedule.WORKING_DAY_START;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -34,16 +37,14 @@ public class ScheduleService {
     public ScheduleViewDto getScheduleForDate(LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
-        LocalTime workingDayStart = LocalTime.of(9, 0);
-        LocalTime workingDayEnd = LocalTime.of(18, 0);
 
         List<Room> allRooms = roomRepository.findAll();
         List<Booking> bookingsForDay = bookingRepository.findActiveBookingsBetween(startOfDay, endOfDay);
 
         List<TimeSlotViewDto> timeSlots = new ArrayList<>();
         for (
-                LocalTime slotTime = workingDayStart;
-                slotTime.isBefore(workingDayEnd); slotTime = slotTime.plusHours(1)
+                LocalTime slotTime = WORKING_DAY_START;
+                slotTime.isBefore(WORKING_DAY_END); slotTime = slotTime.plusHours(1)
         ) {
             final LocalDateTime currentSlotStart = date.atTime(slotTime);
             final LocalDateTime currentSlotEnd = currentSlotStart.plusHours(1);
