@@ -1,0 +1,41 @@
+package iwkms.roomflow.app.web.exception;
+
+import iwkms.roomflow.app.web.exception.dto.ErrorResponseDto;
+import iwkms.roomflow.app.web.exception.dto.ValidationErrorResponseDto;
+import iwkms.roomflow.exception.ResourceNotFoundException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ValidationErrorResponseDto handleValidationExceptions(MethodArgumentNotValidException ex) {
+        List<ValidationErrorResponseDto.Violation> violations = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> new ValidationErrorResponseDto.Violation(error.getField(), error.getDefaultMessage()))
+                .collect(Collectors.toList());
+        return new ValidationErrorResponseDto(HttpStatus.BAD_REQUEST.value(), "Validation failed", violations);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponseDto handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return new ErrorResponseDto(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponseDto handleAllUncaughtException(Exception ex) {
+        log.error("An unexpected error occurred", ex);
+        return new ErrorResponseDto(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected server error occurred");
+    }
+}
