@@ -1,5 +1,6 @@
 package iwkms.roomflow.modules.booking.impl.service;
 
+import iwkms.roomflow.exception.BookingConflictException;
 import iwkms.roomflow.exception.ResourceNotFoundException;
 import iwkms.roomflow.modules.booking.api.dto.BookRoomDto;
 import iwkms.roomflow.modules.booking.api.dto.CancelBookingDto;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,8 +21,16 @@ public class BookingManagementService {
 
     private final BookingRepository bookingRepository;
 
+
     public Booking bookRoom(BookRoomDto command) {
-        // TODO: Валидация пересечений
+        List<Booking> conflictingBookings = bookingRepository.findConflictingBookings(
+                command.roomId(), command.startTime(), command.endTime()
+        );
+
+        if (!conflictingBookings.isEmpty()) {
+            throw new BookingConflictException("Room is already booked for the selected time period.");
+        }
+
         Booking booking = Booking.builder()
                 .id(UUID.randomUUID())
                 .roomId(command.roomId())

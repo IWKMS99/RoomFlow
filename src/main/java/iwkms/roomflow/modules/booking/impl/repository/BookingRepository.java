@@ -20,4 +20,13 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             AND b.endTime > :startOfDay
             """)
     List<Booking> findActiveBookingsBetween(LocalDateTime startOfDay, LocalDateTime endOfDay);
+
+    @Query("""
+            SELECT b FROM Booking b
+            WHERE b.roomId = :roomId
+            AND b.status <> 'CANCELLED'
+            AND b.startTime < :endTime
+            AND b.endTime > :startTime
+            """)
+    List<Booking> findConflictingBookings(UUID roomId, LocalDateTime startTime, LocalDateTime endTime);
 }

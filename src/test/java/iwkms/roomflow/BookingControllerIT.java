@@ -165,6 +165,38 @@ class BookingControllerIT {
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Validation failed")))
-                .andExpect(jsonPath("$.violations[0].description", is("End time must be after start time")));
+                .andExpect(jsonPath("$.violations[0].description",
+                        is("End time must be after start time")));
+    }
+
+    @Test
+    @DisplayName("POST /bookings: должен вернуть 409 Conflict при попытке забронировать уже занятое время")
+    void shouldReturnConflictWhenBookingOverlaps() throws Exception {
+        UUID roomId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        UUID firstUserId = UUID.fromString("00000000-0000-0000-0000-000000000004");
+
+        Booking initialBooking = Booking.builder()
+                .id(UUID.randomUUID())
+                .roomId(roomId)
+                .userId(firstUserId)
+                .startTime(LocalDateTime.now().plusDays(3).withHour(12).withMinute(0).withNano(0))
+                .endTime(LocalDateTime.now().plusDays(3).withHour(13).withMinute(0).withNano(0))
+                .status(BookingStatus.CONFIRMED)
+                .build();
+        bookingRepository.saveAndFlush(initialBooking);
+
+        CreateBookingRequestDto conflictingRequest = new CreateBookingRequestDto(
+                roomId,
+                LocalDateTime.now().plusDays(3).withHour(12).withMinute(30).withNano(0),
+                LocalDateTime.now().plusDays(3).withHour(13).withMinute(30).withNano(0)
+        );
+
+        mockMvc.perform(post("/api/v1/bookings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(conflictingRequest)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status", is(409)))
+                .andExpect(jsonPath("$.message",
+                        is("Room is already booked for the selected time period.")));
     }
 }

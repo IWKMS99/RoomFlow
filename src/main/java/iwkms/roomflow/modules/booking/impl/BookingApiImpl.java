@@ -37,7 +37,6 @@ public class BookingApiImpl implements BookingApi {
     }
 
 
-
     @Override
     public List<BookingResponseDto> findByUserId(UUID userId) {
         return scheduleService.findByUserId(userId).stream()
