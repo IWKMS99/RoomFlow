@@ -1,0 +1,123 @@
+.pageContainer {
+    max-width: 800px;
+}
+
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.pageHeader h1 {
+    margin: 0;
+}
+
+.dateSelector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-weight: 500;
+}
+
+.dateSelector button {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.timeSlotsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.timeSlot {
+    display: flex;
+    gap: 20px;
+}
+
+.timeLabel {
+    width: 120px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding-top: 12px;
+}
+
+.roomsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.roomCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-card);
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.roomInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statusIndicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.available {
+    border-color: var(--green-active);
+}
+
+.booked {
+    border-color: var(--red-cancel);
+}
+
+.available .statusIndicator {
+    background-color: var(--green-active);
+}
+
+.booked .statusIndicator {
+    background-color: var(--red-cancel);
+}
+
+.roomName {
+    margin: 0;
+    font-weight: 500;
+}
+
+.roomMeta {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.bookButton {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.bookButton:hover {
+    background-color: var(--primary-blue-hover);
+}
+
+.bookButton:disabled {
+    background-color: var(--bg-content);
+    cursor: not-allowed;
+}
