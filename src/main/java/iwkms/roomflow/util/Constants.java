@@ -16,10 +16,6 @@ public final class Constants {
         public static final UUID USER_ID_4 = UUID.fromString("00000000-0000-0000-0000-000000000004");
     }
 
-    public static final class Api {
-        public static final UUID MOCK_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-    }
-
     public static final class Schedule {
         public static final LocalTime WORKING_DAY_START = LocalTime.of(9, 0);
         public static final LocalTime WORKING_DAY_END = LocalTime.of(18, 0);

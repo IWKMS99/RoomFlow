@@ -8,6 +8,7 @@ import iwkms.roomflow.modules.booking.impl.domain.Booking;
 import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,11 +43,17 @@ public class BookingManagementService {
         return bookingRepository.save(booking);
     }
 
+
     public void cancelBooking(CancelBookingDto command) {
         Booking booking = bookingRepository.findById(command.bookingId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Booking with id " + command.bookingId() + " not found"));
-        // TODO: Проверка прав
+
+        if (!booking.getUserId().equals(command.userId())) {
+            // TODO: В будущем добавить проверку для администраторов (ROLE_ADMIN)
+            throw new AccessDeniedException("You do not have permission to cancel this booking.");
+        }
+
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
     }

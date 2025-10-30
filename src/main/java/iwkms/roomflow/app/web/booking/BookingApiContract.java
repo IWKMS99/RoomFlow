@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-@Tag(name = "Управление бронированиями", description = "API для создания, отмены и просмотра бронирований комнат")
+@Tag(name = "02. Управление бронированиями", description = "API для создания, отмены и просмотра бронирований комнат")
 public interface BookingApiContract {
 
     @Operation(
