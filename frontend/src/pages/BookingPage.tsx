@@ -94,7 +94,15 @@ const BookingPage: React.FC = () => {
 
             const response = await createBooking(payload);
 
-            navigate('/booking/confirmed', {state: {bookingDetails: response}});
+            const selectedRoom = allRooms.find(r => r.roomId === selectedRoomId);
+            const roomName = selectedRoom ? selectedRoom.roomName : 'Неизвестная комната';
+
+            navigate('/booking/confirmed', {
+                state: {
+                    bookingDetails: response,
+                    roomName: roomName
+                }
+            });
 
         } catch (err: any) {
             console.error("Failed to create booking:", err);

@@ -1,6 +1,21 @@
-import React from 'react';
-import {Link} from 'react-router-dom';
+import React, {useEffect} from 'react';
+import {Link, useLocation, useNavigate} from 'react-router-dom';
 import styles from './ConfirmationPage.module.css';
+import type {BookingResponse} from '../types/booking';
+
+const formatConfirmationDate = (isoString: string): string => {
+    return new Date(isoString).toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+};
+
+const formatConfirmationTime = (startIso: string, endIso: string): string => {
+    const startTime = new Date(startIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+    const endTime = new Date(endIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+    return `${startTime} - ${endTime}`;
+};
 
 const SuccessIcon = () => (
     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -11,12 +26,23 @@ const SuccessIcon = () => (
 );
 
 const ConfirmationPage: React.FC = () => {
-    // Mock data
-    const bookingDetails = {
-        room: 'Переговорка А',
-        date: '15.10.2025',
-        time: '14:00 - 15:00',
-    };
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const state = location.state as { bookingDetails: BookingResponse; roomName: string } | null;
+
+    useEffect(() => {
+        if (!state?.bookingDetails) {
+            console.warn("Confirmation page accessed without booking details. Redirecting.");
+            navigate('/schedule', {replace: true});
+        }
+    }, [state, navigate]);
+
+    if (!state?.bookingDetails) {
+        return <p>Проверка данных о бронировании...</p>;
+    }
+
+    const {bookingDetails, roomName} = state;
 
     return (
         <div className={styles.pageContainer}>
@@ -30,20 +56,20 @@ const ConfirmationPage: React.FC = () => {
                 <div className={styles.details}>
                     <div className={styles.detailItem}>
                         <span>Помещение:</span>
-                        <strong>{bookingDetails.room}</strong>
+                        <strong>{roomName}</strong>
                     </div>
                     <div className={styles.detailItem}>
                         <span>Дата:</span>
-                        <strong>{bookingDetails.date}</strong>
+                        <strong>{formatConfirmationDate(bookingDetails.startTime)}</strong>
                     </div>
                     <div className={styles.detailItem}>
                         <span>Время:</span>
-                        <strong>{bookingDetails.time}</strong>
+                        <strong>{formatConfirmationTime(bookingDetails.startTime, bookingDetails.endTime)}</strong>
                     </div>
                 </div>
 
                 <div className={styles.actions}>
-                    <Link to="/" className={`${styles.button} ${styles.primary}`}>На главную</Link>
+                    <Link to="/schedule" className={`${styles.button} ${styles.primary}`}>Журнал занятости</Link>
                     <Link to="/my-bookings" className={`${styles.button} ${styles.secondary}`}>Мои брони</Link>
                 </div>
             </div>
