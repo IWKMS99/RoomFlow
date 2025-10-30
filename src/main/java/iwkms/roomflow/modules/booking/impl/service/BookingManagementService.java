@@ -6,7 +6,9 @@ import iwkms.roomflow.modules.booking.api.dto.BookRoomDto;
 import iwkms.roomflow.modules.booking.api.dto.CancelBookingDto;
 import iwkms.roomflow.modules.booking.impl.domain.Booking;
 import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
+import iwkms.roomflow.modules.booking.impl.domain.Room;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
+import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -21,9 +23,12 @@ import java.util.UUID;
 public class BookingManagementService {
 
     private final BookingRepository bookingRepository;
-
+    private final RoomRepository roomRepository;
 
     public Booking bookRoom(BookRoomDto command) {
+        Room room = roomRepository.findById(command.roomId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room with id " + command.roomId() + " not found"));
+
         List<Booking> conflictingBookings = bookingRepository.findConflictingBookings(
                 command.roomId(), command.startTime(), command.endTime()
         );
@@ -34,7 +39,7 @@ public class BookingManagementService {
 
         Booking booking = Booking.builder()
                 .id(UUID.randomUUID())
-                .roomId(command.roomId())
+                .room(room)
                 .userId(command.userId())
                 .startTime(command.startTime())
                 .endTime(command.endTime())

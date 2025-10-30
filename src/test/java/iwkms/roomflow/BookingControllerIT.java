@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import iwkms.roomflow.modules.booking.api.dto.CreateBookingRequestDto;
 import iwkms.roomflow.modules.booking.impl.domain.Booking;
 import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
+import iwkms.roomflow.modules.booking.impl.domain.Room;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
+import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
@@ -48,11 +50,14 @@ class BookingControllerIT {
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired
+    private RoomRepository roomRepository;
+    @Autowired
     private UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     private User testUser1, testUser2, testUser3, testUser4;
+    private Room roomA;
 
     @BeforeEach
     void setUp() {
@@ -61,6 +66,7 @@ class BookingControllerIT {
         testUser3 = User.builder().id(USER_ID_3).email("user3@test.com").password(passwordEncoder.encode("password")).roles(Set.of(Role.ROLE_USER)).build();
         testUser4 = User.builder().id(USER_ID_4).email("user4@test.com").password(passwordEncoder.encode("password")).roles(Set.of(Role.ROLE_USER)).build();
         userRepository.saveAll(List.of(testUser1, testUser2, testUser3, testUser4));
+        roomA = roomRepository.findById(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")).orElseThrow();
     }
 
     @Test
@@ -91,7 +97,7 @@ class BookingControllerIT {
     @DisplayName("GET /schedule: должен вернуть корректную сетку занятости (требует аутентификации)")
     void shouldReturnCorrectScheduleForDate() throws Exception {
         LocalDate testDate = LocalDate.now().plusDays(1);
-        Booking bookingForRoomA = Booking.builder().id(UUID.randomUUID()).roomId(ROOM_A_ID).userId(testUser2.getId()).startTime(testDate.atTime(10, 0)).endTime(testDate.atTime(11, 0)).status(BookingStatus.CONFIRMED).build();
+        Booking bookingForRoomA = Booking.builder().id(UUID.randomUUID()).room(roomA).userId(testUser2.getId()).startTime(testDate.atTime(10, 0)).endTime(testDate.atTime(11, 0)).status(BookingStatus.CONFIRMED).build();
         bookingRepository.save(bookingForRoomA);
 
         mockMvc.perform(get("/api/v1/schedule")
@@ -106,7 +112,7 @@ class BookingControllerIT {
     @Test
     @DisplayName("DELETE /bookings/{id}: должен успешно отменить существующее бронирование")
     void shouldCancelBookingSuccessfully() throws Exception {
-        Booking bookingToCancel = Booking.builder().id(UUID.randomUUID()).roomId(ROOM_A_ID).userId(testUser3.getId()).startTime(LocalDateTime.now().plusDays(2).withHour(14).withMinute(0)).endTime(LocalDateTime.now().plusDays(2).withHour(15).withMinute(0)).status(BookingStatus.CONFIRMED).build();
+        Booking bookingToCancel = Booking.builder().id(UUID.randomUUID()).room(roomA).userId(testUser3.getId()).startTime(LocalDateTime.now().plusDays(2).withHour(14).withMinute(0)).endTime(LocalDateTime.now().plusDays(2).withHour(15).withMinute(0)).status(BookingStatus.CONFIRMED).build();
         bookingRepository.saveAndFlush(bookingToCancel);
 
         mockMvc.perform(delete("/api/v1/bookings/" + bookingToCancel.getId())
@@ -147,7 +153,7 @@ class BookingControllerIT {
     @Test
     @DisplayName("POST /bookings: должен вернуть 409 Conflict при попытке забронировать уже занятое время")
     void shouldReturnConflictWhenBookingOverlaps() throws Exception {
-        Booking initialBooking = Booking.builder().id(UUID.randomUUID()).roomId(ROOM_A_ID).userId(testUser4.getId()).startTime(LocalDateTime.now().plusDays(3).withHour(12).withMinute(0)).endTime(LocalDateTime.now().plusDays(3).withHour(13).withMinute(0)).status(BookingStatus.CONFIRMED).build();
+        Booking initialBooking = Booking.builder().id(UUID.randomUUID()).room(roomA).userId(testUser4.getId()).startTime(LocalDateTime.now().plusDays(3).withHour(12).withMinute(0)).endTime(LocalDateTime.now().plusDays(3).withHour(13).withMinute(0)).status(BookingStatus.CONFIRMED).build();
         bookingRepository.saveAndFlush(initialBooking);
 
         CreateBookingRequestDto conflictingRequest = new CreateBookingRequestDto(

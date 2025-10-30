@@ -51,7 +51,7 @@ public class ScheduleService {
 
             List<RoomInScheduleViewDto> roomStatuses = allRooms.stream().map(room -> {
                 boolean isAvailable = bookingsForDay.stream()
-                        .filter(booking -> booking.getRoomId().equals(room.getId()))
+                        .filter(booking -> booking.getRoom().getId().equals(room.getId()))
                         .noneMatch(booking ->
                                 booking.getStartTime().isBefore(currentSlotEnd) &&
                                         booking.getEndTime().isAfter(currentSlotStart)

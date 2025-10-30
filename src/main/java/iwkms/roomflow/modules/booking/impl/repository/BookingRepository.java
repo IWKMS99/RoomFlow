@@ -23,7 +23,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     @Query("""
             SELECT b FROM Booking b
-            WHERE b.roomId = :roomId
+            WHERE b.room.id = :roomId
             AND b.status <> 'CANCELLED'
             AND b.startTime < :endTime
             AND b.endTime > :startTime

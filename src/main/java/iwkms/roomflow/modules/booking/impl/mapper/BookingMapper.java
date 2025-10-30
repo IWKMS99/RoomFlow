@@ -9,7 +9,8 @@ public class BookingMapper {
     public BookingResponseDto toResponseDTO(Booking booking) {
         return new BookingResponseDto(
                 booking.getId(),
-                booking.getRoomId(),
+                booking.getRoom().getId(),
+                booking.getRoom().getName(),
                 booking.getUserId(),
                 booking.getStartTime(),
                 booking.getEndTime(),
