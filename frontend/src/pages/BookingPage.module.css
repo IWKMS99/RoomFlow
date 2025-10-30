@@ -1,0 +1,145 @@
+.pageContainer {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.backLink {
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.formSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formSection label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.formSection input[type="date"] {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.timeGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.timeButton {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.timeButton.selected {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.roomsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.roomCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.roomCard:hover {
+    border-color: var(--primary-blue);
+}
+
+.selectedRoom {
+    border-color: var(--primary-blue);
+    border-width: 2px;
+}
+
+.disabledRoom {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--bg-content);
+}
+
+.disabledRoom:hover {
+    border-color: var(--border-color);
+}
+
+.roomName {
+    margin: 0 0 4px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.roomMeta {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag {
+    background-color: var(--bg-content);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.statusTag {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.available {
+    color: var(--green-active);
+}
+
+.booked {
+    color: var(--red-cancel);
+}
+
+.submitButton {
+    background-color: var(--primary-blue);
+    color: var(--text-primary);
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+}
+
+.submitButton:hover {
+    background-color: var(--primary-blue-hover);
+}
