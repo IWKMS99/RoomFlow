@@ -91,8 +91,7 @@ const MyBookingsPage: React.FC = () => {
             <div key={booking.id} className={styles.bookingCard}>
                 <div className={styles.cardTop}>
                     <div>
-                        {/* TODO: Получать имя комнаты по roomId */}
-                        <p className={styles.roomName}>Комната ID: ...{booking.roomId.slice(-6)}</p>
+                        <p className={styles.roomName}>{booking.roomName}</p>
                         <p className={styles.dateTime}>
                             {formatBookingDate(booking.startTime)} • {formatBookingTime(booking.startTime, booking.endTime)}
                         </p>

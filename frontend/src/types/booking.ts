@@ -3,6 +3,7 @@ export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED
 export interface BookingResponse {
     id: string;
     roomId: string;
+    roomName: string;
     userId: string;
     startTime: string;
     endTime: string;
