@@ -1,6 +1,7 @@
 import React, {createContext, type ReactNode, useContext, useEffect, useMemo, useState} from 'react';
 import {jwtDecode} from 'jwt-decode';
 import type {DecodedToken} from '../types/user';
+import {setupInterceptors} from "../services/api.ts";
 
 interface AuthContextType {
     token: string | null;
@@ -59,6 +60,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
         setToken(null);
         setUser(null);
     };
+
+    useEffect(() => {
+        setupInterceptors(logout);
+    }, []);
 
     const isAuthenticated = !!token;
 

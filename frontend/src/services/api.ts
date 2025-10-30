@@ -2,7 +2,7 @@ import axios from 'axios';
 import type {BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8084/api/v1',
+    baseURL: import.meta.env.VITE_API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -20,6 +20,19 @@ apiClient.interceptors.request.use(
         return Promise.reject(error);
     }
 );
+
+export const setupInterceptors = (logout: () => void) => {
+    apiClient.interceptors.response.use(
+        (response) => response,
+        (error) => {
+            if (error.response && error.response.status === 401) {
+                console.error("Unauthorized request. Logging out.");
+                logout();
+            }
+            return Promise.reject(error);
+        }
+    );
+};
 
 export const fetchSchedule = async (date: string): Promise<ScheduleView> => {
     const response = await apiClient.get<ScheduleView>('/schedule', {
