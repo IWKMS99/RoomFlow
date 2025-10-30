@@ -1,0 +1,87 @@
+import React, {createContext, type ReactNode, useContext, useEffect, useMemo, useState} from 'react';
+import {jwtDecode} from 'jwt-decode';
+import type {DecodedToken} from '../types/user';
+
+interface AuthContextType {
+    token: string | null;
+    user: DecodedToken | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    login: (token: string) => void;
+    logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
+    const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
+    const [user, setUser] = useState<DecodedToken | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        try {
+            const storedToken = localStorage.getItem('authToken');
+            if (storedToken) {
+                const decodedUser = jwtDecode<DecodedToken>(storedToken);
+                if (decodedUser.exp * 1000 > Date.now()) {
+                    setToken(storedToken);
+                    setUser(decodedUser);
+                } else {
+                    localStorage.removeItem('authToken');
+                    setToken(null);
+                    setUser(null);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to initialize auth state:", error);
+            localStorage.removeItem('authToken');
+            setToken(null);
+            setUser(null);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    const login = (newToken: string) => {
+        try {
+            const decodedUser = jwtDecode<DecodedToken>(newToken);
+            localStorage.setItem('authToken', newToken);
+            setToken(newToken);
+            setUser(decodedUser);
+        } catch (error) {
+            console.error("Failed to decode token on login:", error);
+            logout();
+        }
+    };
+
+    const logout = () => {
+        localStorage.removeItem('authToken');
+        setToken(null);
+        setUser(null);
+    };
+
+    const isAuthenticated = !!token;
+
+    const value = useMemo(() => ({
+        token,
+        user,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+    }), [token, user, isLoading]);
+
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = (): AuthContextType => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};

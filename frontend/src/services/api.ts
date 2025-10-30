@@ -8,6 +8,19 @@ const apiClient = axios.create({
     },
 });
 
+apiClient.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 export const fetchSchedule = async (date: string): Promise<ScheduleView> => {
     const response = await apiClient.get<ScheduleView>('/schedule', {
         params: {date},
@@ -28,3 +41,13 @@ export const createBooking = async (payload: CreateBookingPayload): Promise<Book
 export const cancelBooking = async (bookingId: string): Promise<void> => {
     await apiClient.delete(`/bookings/${bookingId}`);
 };
+
+export const registerUser = async (payload: any) => {
+    const response = await apiClient.post('/auth/register', payload);
+    return response.data;
+}
+
+export const loginUser = async (payload: any) => {
+    const response = await apiClient.post('/auth/login', payload);
+    return response.data;
+}
