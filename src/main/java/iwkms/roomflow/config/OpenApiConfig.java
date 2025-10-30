@@ -36,7 +36,7 @@ public class OpenApiConfig {
                                 .url("https://opensource.org/licenses/MIT")))
 
                 .addServersItem(new Server()
-                        .url("http://localhost:8081")
+                        .url("http://localhost:8084")
                         .description("Локальный сервер для разработки"))
 
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

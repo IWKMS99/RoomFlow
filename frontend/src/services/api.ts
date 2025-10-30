@@ -2,7 +2,7 @@ import axios from 'axios';
 import type {BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8081/api/v1',
+    baseURL: 'http://localhost:8084/api/v1',
     headers: {
         'Content-Type': 'application/json',
     },
