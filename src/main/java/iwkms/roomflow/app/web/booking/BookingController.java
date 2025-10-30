@@ -40,8 +40,7 @@ public class BookingController implements BookingApiContract {
     @DeleteMapping("/bookings/{bookingId}")
     public ResponseEntity<Void> cancelBooking(@PathVariable UUID bookingId) {
         User currentUser = getCurrentUser();
-        // TODO: Проверка прав, что currentUser.getId() может отменять это бронирование
-        CancelBookingDto command = new CancelBookingDto(bookingId, currentUser.getId());
+        CancelBookingDto command = new CancelBookingDto(bookingId, currentUser);
         bookingApi.cancelBooking(command);
         return ResponseEntity.noContent().build();
     }

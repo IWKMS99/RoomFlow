@@ -9,6 +9,8 @@ import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
 import iwkms.roomflow.modules.booking.impl.domain.Room;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
 import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
+import iwkms.roomflow.modules.user.impl.domain.Role;
+import iwkms.roomflow.modules.user.impl.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -54,8 +56,13 @@ public class BookingManagementService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Booking with id " + command.bookingId() + " not found"));
 
-        if (!booking.getUserId().equals(command.userId())) {
-            // TODO: В будущем добавить проверку для администраторов (ROLE_ADMIN)
+        User currentUser = command.currentUser();
+
+        boolean isOwner = booking.getUserId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(Role.ROLE_ADMIN.name()));
+
+        if (!isOwner && !isAdmin) {
             throw new AccessDeniedException("You do not have permission to cancel this booking.");
         }
 
