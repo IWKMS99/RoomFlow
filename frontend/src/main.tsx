@@ -7,6 +7,7 @@ import {AuthProvider} from './context/AuthContext.tsx';
 
 import Layout from './components/Layout.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
+import AuthLayout from './components/AuthLayout.tsx';
 import SchedulePage from './pages/SchedulePage.tsx';
 import MyBookingsPage from './pages/MyBookingsPage.tsx';
 import BookingPage from './pages/BookingPage.tsx';
@@ -16,12 +17,17 @@ import RegisterPage from './pages/RegisterPage.tsx';
 
 const router = createBrowserRouter([
     {
-        path: '/login',
-        element: <LoginPage/>
-    },
-    {
-        path: '/register',
-        element: <RegisterPage/>
+        element: <AuthLayout/>,
+        children: [
+            {
+                path: '/login',
+                element: <LoginPage/>
+            },
+            {
+                path: '/register',
+                element: <RegisterPage/>
+            }
+        ]
     },
     {
         path: '/',
