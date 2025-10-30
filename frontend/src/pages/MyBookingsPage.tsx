@@ -3,6 +3,7 @@ import styles from './MyBookingsPage.module.css';
 import {cancelBooking, getMyBookings} from '../services/api';
 import type {BookingResponse, BookingStatus} from '../types/booking';
 import BookingCardSkeleton from "../components/BookingCardSkeleton.tsx";
+import toast from "react-hot-toast";
 
 const formatBookingDate = (isoString: string): string => {
     return new Date(isoString).toLocaleDateString('ru-RU', {
@@ -50,20 +51,26 @@ const MyBookingsPage: React.FC = () => {
     }, []);
 
     const handleCancelBooking = async (bookingId: string) => {
-        if (!window.confirm("Вы уверены, что хотите отменить это бронирование?")) {
-            return;
-        }
-        try {
-            await cancelBooking(bookingId);
-            setBookings(prevBookings =>
-                prevBookings.map(b =>
-                    b.id === bookingId ? {...b, status: 'CANCELLED'} : b
-                )
-            );
-        } catch (err) {
-            console.error("Failed to cancel booking:", err);
-            alert("Не удалось отменить бронирование. Пожалуйста, попробуйте еще раз.");
-        }
+        const promise = cancelBooking(bookingId);
+
+        toast.promise(
+            promise,
+            {
+                loading: 'Отменяем бронирование...',
+                success: () => {
+                    setBookings(prevBookings =>
+                        prevBookings.map(b =>
+                            b.id === bookingId ? {...b, status: 'CANCELLED'} : b
+                        )
+                    );
+                    return 'Бронирование успешно отменено!';
+                },
+                error: (err) => {
+                    console.error("Failed to cancel booking:", err);
+                    return err.response?.data?.message || "Не удалось отменить бронирование.";
+                },
+            }
+        );
     };
 
     const {activeBookings, historyBookings} = useMemo(() => {

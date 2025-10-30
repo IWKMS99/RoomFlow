@@ -3,6 +3,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import styles from './BookingPage.module.css';
 import {createBooking, fetchSchedule} from '../services/api';
 import type {ScheduleView} from '../types/booking';
+import toast from "react-hot-toast";
 
 const formatDateForInput = (date: Date): string => {
     return date.toISOString().split('T')[0];
@@ -71,12 +72,11 @@ const BookingPage: React.FC = () => {
 
     const handleSubmit = async () => {
         if (!selectedTime || !selectedRoomId) {
-            alert("Пожалуйста, выберите время и помещение.");
+            toast.error("Пожалуйста, выберите время и помещение.");
             return;
         }
 
         setIsSubmitting(true);
-        setError(null);
 
         try {
             const [hour, minute] = selectedTime.split(':').map(Number);
@@ -94,6 +94,8 @@ const BookingPage: React.FC = () => {
 
             const response = await createBooking(payload);
 
+            toast.success('Комната успешно забронирована!');
+
             const selectedRoom = allRooms.find(r => r.roomId === selectedRoomId);
             const roomName = selectedRoom ? selectedRoom.roomName : 'Неизвестная комната';
 
@@ -106,11 +108,10 @@ const BookingPage: React.FC = () => {
 
         } catch (err: any) {
             console.error("Failed to create booking:", err);
-            if (err.response?.status === 409) {
-                setError("К сожалению, эта комната уже занята. Пожалуйста, выберите другое время.");
-            } else {
-                setError("Произошла ошибка при бронировании.");
-            }
+            const errorMessage = err.response?.status === 409
+                ? "К сожалению, эта комната уже занята. Пожалуйста, выберите другое время."
+                : "Произошла ошибка при бронировании.";
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
