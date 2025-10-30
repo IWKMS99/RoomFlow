@@ -2,6 +2,7 @@ import React from 'react';
 import {NavLink, Outlet, useNavigate} from 'react-router-dom';
 import styles from './Layout.module.css';
 import {useAuth} from '../context/AuthContext.tsx';
+import {Toaster} from "react-hot-toast";
 
 const ListIcon = () => <span>📋</span>;
 const CalendarIcon = () => <span>📅</span>;
@@ -22,6 +23,15 @@ const Layout: React.FC = () => {
 
     return (
         <div className={styles.layoutContainer}>
+            <Toaster
+                position="bottom-right"
+                toastOptions={{
+                    style: {
+                        background: 'var(--bg-card)',
+                        color: 'var(--text-primary)',
+                    },
+                }}
+            />
             <aside className={styles.sidebar}>
                 <div className={styles.logo}>RoomFlow</div>
                 <nav className={styles.nav}>
