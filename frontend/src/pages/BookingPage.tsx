@@ -110,7 +110,7 @@ const BookingPage: React.FC = () => {
             console.error("Failed to create booking:", err);
             const errorMessage = err.response?.status === 409
                 ? "К сожалению, эта комната уже занята. Пожалуйста, выберите другое время."
-                : "Произошла ошибка при бронировании.";
+                : (err.response?.data?.message || "Произошла ошибка при бронировании.");
             toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
