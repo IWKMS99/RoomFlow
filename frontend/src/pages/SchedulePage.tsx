@@ -1,66 +1,108 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import styles from './SchedulePage.module.css';
+import {fetchSchedule} from '../services/api';
+import type {ScheduleView} from '../types/booking';
 
-const mockData = [
-    {
-        time: '09:00 - 10:00',
-        rooms: [
-            {name: 'Переговорка А', floor: 3, capacity: 6, available: true},
-            {name: 'Переговорка Б', floor: 5, capacity: 10, available: true},
-        ],
-    },
-    {
-        time: '10:00 - 11:00',
-        rooms: [
-            {name: 'Переговорка А', floor: 3, capacity: 6, available: true},
-            {name: 'Переговорка Б', floor: 5, capacity: 10, available: false},
-        ],
-    },
-    {
-        time: '11:00 - 12:00',
-        rooms: [
-            {name: 'Переговорка А', floor: 3, capacity: 6, available: false},
-            {name: 'Переговорка Б', floor: 5, capacity: 10, available: false},
-        ],
-    },
-];
+const formatDateForApi = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+};
+
+const formatDateForDisplay = (date: Date): string => {
+    return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+};
+
 
 const SchedulePage: React.FC = () => {
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [schedule, setSchedule] = useState<ScheduleView | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadSchedule = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const dateString = formatDateForApi(selectedDate);
+                const data = await fetchSchedule(dateString);
+                setSchedule(data);
+            } catch (err) {
+                console.error("Failed to fetch schedule:", err);
+                setError("Не удалось загрузить расписание. Пожалуйста, попробуйте обновить страницу.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadSchedule();
+    }, [selectedDate]);
+
+    const handlePrevDay = () => {
+        const newDate = new Date(selectedDate);
+        newDate.setDate(selectedDate.getDate() - 1);
+        setSelectedDate(newDate);
+    };
+
+    const handleNextDay = () => {
+        const newDate = new Date(selectedDate);
+        newDate.setDate(selectedDate.getDate() + 1);
+        setSelectedDate(newDate);
+    };
+
+    const renderContent = () => {
+        if (isLoading) {
+            return <p>Загрузка расписания...</p>; // TODO: Заменить на компонент-скелет
+        }
+        if (error) {
+            return <p style={{color: 'var(--red-cancel)'}}>{error}</p>;
+        }
+        if (!schedule || schedule.timeSlots.length === 0) {
+            return <p>На выбранную дату нет доступных слотов.</p>;
+        }
+        return (
+            <div className={styles.timeSlotsContainer}>
+                {schedule.timeSlots.map((slot) => {
+                    const nextHour = parseInt(slot.time.split(':')[0]) + 1;
+                    return (
+                        <div key={slot.time} className={styles.timeSlot}>
+                            <div
+                                className={styles.timeLabel}>{`${slot.time.substring(0, 5)} - ${nextHour.toString().padStart(2, '0')}:00`}</div>
+                            <div className={styles.roomsList}>
+                                {slot.rooms.map((room) => (
+                                    <div key={room.roomId}
+                                         className={`${styles.roomCard} ${room.isAvailable ? styles.available : styles.booked}`}>
+                                        <div className={styles.roomInfo}>
+                                            <span className={styles.statusIndicator}></span>
+                                            <div>
+                                                <p className={styles.roomName}>{room.roomName}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <div className={styles.pageContainer}>
             <header className={styles.pageHeader}>
                 <h1>Журнал занятости</h1>
                 <div className={styles.dateSelector}>
-                    <button>&lt;</button>
-                    <span>15 октября 2025</span>
-                    <button>&gt;</button>
+                    <button onClick={handlePrevDay}>&lt;</button>
+                    <span>{formatDateForDisplay(selectedDate)}</span>
+                    <button onClick={handleNextDay}>&gt;</button>
                 </div>
             </header>
 
-            <div className={styles.timeSlotsContainer}>
-                {mockData.map((slot) => (
-                    <div key={slot.time} className={styles.timeSlot}>
-                        <div className={styles.timeLabel}>{slot.time}</div>
-                        <div className={styles.roomsList}>
-                            {slot.rooms.map((room) => (
-                                <div key={room.name} className={styles.roomCard}>
-                                    <div className={styles.roomInfo}>
-                                        <span
-                                            className={`${styles.statusIndicator} ${room.available ? styles.available : styles.booked}`}></span>
-                                        <div>
-                                            <p className={styles.roomName}>{room.name}</p>
-                                            <p className={styles.roomMeta}>{`${room.capacity} мест • Этаж ${room.floor}`}</p>
-                                        </div>
-                                    </div>
-                                    <button disabled={!room.available} className={styles.bookButton}>
-                                        Забронировать
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {renderContent()}
         </div>
     );
 };

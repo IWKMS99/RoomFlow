@@ -1,5 +1,6 @@
 .pageContainer {
-    max-width: 800px;
+    width: 100%;
+    max-width: 900px;
 }
 
 .pageHeader {
@@ -11,6 +12,7 @@
 
 .pageHeader h1 {
     margin: 0;
+    font-size: 2rem;
 }
 
 .dateSelector {
@@ -22,10 +24,16 @@
 
 .dateSelector button {
     background: none;
-    border: none;
+    border: 1px solid var(--border-color);
     color: var(--text-primary);
-    font-size: 1.5rem;
     cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .timeSlotsContainer {
@@ -37,10 +45,11 @@
 .timeSlot {
     display: flex;
     gap: 20px;
+    align-items: flex-start;
 }
 
 .timeLabel {
-    width: 120px;
+    width: 140px;
     flex-shrink: 0;
     color: var(--text-secondary);
     font-weight: 500;
@@ -95,29 +104,11 @@
 .roomName {
     margin: 0;
     font-weight: 500;
+    font-size: 1.1rem;
 }
 
 .roomMeta {
     margin: 0;
     color: var(--text-secondary);
     font-size: 0.9rem;
-}
-
-.bookButton {
-    background-color: var(--primary-blue);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.bookButton:hover {
-    background-color: var(--primary-blue-hover);
-}
-
-.bookButton:disabled {
-    background-color: var(--bg-content);
-    cursor: not-allowed;
 }
