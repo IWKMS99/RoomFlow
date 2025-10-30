@@ -68,6 +68,7 @@
 .активно { color: var(--green-active); }
 .отменено { color: var(--red-cancel); }
 .завершено { color: var(--text-secondary); }
+.ожидает { color: var(--yellow-warning); }
 
 .cardActions {
     margin-top: 16px;

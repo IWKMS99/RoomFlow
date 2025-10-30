@@ -28,7 +28,7 @@ const statusMap: Record<BookingStatus, { text: string; className: string }> = {
 
 
 const MyBookingsPage: React.FC = () => {
-    const [activeTab] = useState<'active' | 'history'>('active');
+    const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
     const [bookings, setBookings] = useState<BookingResponse[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -90,7 +90,6 @@ const MyBookingsPage: React.FC = () => {
         return {activeBookings: active, historyBookings: history};
     }, [bookings]);
 
-
     const renderBookingCard = (booking: BookingResponse) => {
         const displayStatus = statusMap[booking.status] || {text: booking.status, className: ''};
         const isCancellable = booking.status === 'CONFIRMED' && new Date(booking.startTime) > new Date();
@@ -125,18 +124,34 @@ const MyBookingsPage: React.FC = () => {
 
     return (
         <div className={styles.pageContainer}>
+            <h1>Мои бронирования</h1>
+            <div className={styles.tabs}>
+                <button
+                    className={`${styles.tab} ${activeTab === 'active' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('active')}
+                >
+                    Активные ({activeBookings.length})
+                </button>
+                <button
+                    className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('history')}
+                >
+                    История ({historyBookings.length})
+                </button>
+            </div>
+
             <div className={styles.bookingsList}>
                 {isLoading ? (
                     <>
-                        <BookingCardSkeleton/>
-                        <BookingCardSkeleton/>
-                        <BookingCardSkeleton/>
+                        <BookingCardSkeleton />
+                        <BookingCardSkeleton />
+                        <BookingCardSkeleton />
                     </>
                 ) : (
                     <>
-                        {error && <p style={{color: 'var(--red-cancel)'}}>{error}</p>}
+                        {error && <p style={{ color: 'var(--red-cancel)' }}>{error}</p>}
                         {!error && displayedBookings.length === 0 && (
-                            <p>У вас нет {activeTab === 'active' ? 'активных' : 'прошедших'} бронирований.</p>
+                            <p>У вас нет {activeTab === 'active' ? 'активных бронирований' : 'бронирований в истории'}.</p>
                         )}
                         {!error && displayedBookings.map(renderBookingCard)}
                     </>
