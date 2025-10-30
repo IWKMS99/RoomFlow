@@ -17,8 +17,9 @@ public class Booking {
     @Id
     private UUID id;
 
-    @Column(nullable = false)
-    private UUID roomId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
 
     @Column(nullable = false)
     private UUID userId;

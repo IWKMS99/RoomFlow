@@ -8,6 +8,7 @@ import java.util.UUID;
 public record BookingResponseDto(
         UUID id,
         UUID roomId,
+        String roomName,
         UUID userId,
         LocalDateTime startTime,
         LocalDateTime endTime,
