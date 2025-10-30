@@ -1,17 +1,114 @@
-import React from 'react';
-import {Link} from 'react-router-dom';
+import React, {useEffect, useMemo, useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
 import styles from './BookingPage.module.css';
+import {createBooking, fetchSchedule} from '../services/api';
+import type {ScheduleView} from '../types/booking';
+
+const formatDateForInput = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+};
 
 const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-const rooms = [
-    {name: 'Переговорка А', floor: 3, capacity: 6, tags: ['Проектор', 'Доска', 'ТВ'], available: true},
-    {name: 'Переговорка Б', floor: 5, capacity: 10, tags: ['Доска'], available: false},
-];
 
 const BookingPage: React.FC = () => {
-    // TODO: Добавить state для управления выбором
-    const selectedTime = '10:00';
-    const selectedRoom = 'Переговорка А';
+    const navigate = useNavigate();
+
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+
+    const [schedule, setSchedule] = useState<ScheduleView | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadSchedule = async () => {
+            setIsLoading(true);
+            setError(null);
+            setSelectedTime(null);
+            setSelectedRoomId(null);
+            try {
+                const dateString = formatDateForInput(selectedDate);
+                const data = await fetchSchedule(dateString);
+                setSchedule(data);
+            } catch (err) {
+                console.error("Failed to fetch schedule:", err);
+                setError("Не удалось загрузить доступные слоты.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadSchedule();
+    }, [selectedDate]);
+
+    const roomAvailability = useMemo(() => {
+        if (!selectedTime || !schedule) {
+            return new Map<string, boolean>();
+        }
+        const timeSlot = schedule.timeSlots.find(slot => slot.time.startsWith(selectedTime));
+        const availabilityMap = new Map<string, boolean>();
+        timeSlot?.rooms.forEach(room => {
+            availabilityMap.set(room.roomId, room.isAvailable);
+        });
+        return availabilityMap;
+    }, [selectedTime, schedule]);
+
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedDate(new Date(e.target.value + 'T00:00:00'));
+    };
+
+    const handleTimeSelect = (time: string) => {
+        setSelectedTime(time);
+        setSelectedRoomId(null);
+    };
+
+    const handleRoomSelect = (roomId: string, isAvailable: boolean) => {
+        if (isAvailable) {
+            setSelectedRoomId(roomId);
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (!selectedTime || !selectedRoomId) {
+            alert("Пожалуйста, выберите время и помещение.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const [hour, minute] = selectedTime.split(':').map(Number);
+            const startTime = new Date(selectedDate);
+            startTime.setHours(hour, minute, 0, 0);
+
+            const endTime = new Date(startTime);
+            endTime.setHours(startTime.getHours() + 1);
+
+            const payload = {
+                roomId: selectedRoomId,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+            };
+
+            const response = await createBooking(payload);
+
+            navigate('/booking/confirmed', {state: {bookingDetails: response}});
+
+        } catch (err: any) {
+            console.error("Failed to create booking:", err);
+            if (err.response?.status === 409) {
+                setError("К сожалению, эта комната уже занята. Пожалуйста, выберите другое время.");
+            } else {
+                setError("Произошла ошибка при бронировании.");
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const allRooms = schedule?.timeSlots[0]?.rooms || [];
 
     return (
         <div className={styles.pageContainer}>
@@ -19,7 +116,7 @@ const BookingPage: React.FC = () => {
 
             <div className={styles.formSection}>
                 <label>Дата</label>
-                <input type="date" defaultValue="2025-10-15"/>
+                <input type="date" value={formatDateForInput(selectedDate)} onChange={handleDateChange}/>
             </div>
 
             <div className={styles.formSection}>
@@ -27,7 +124,8 @@ const BookingPage: React.FC = () => {
                 <div className={styles.timeGrid}>
                     {timeSlots.map(time => (
                         <button key={time}
-                                className={`${styles.timeButton} ${time === selectedTime ? styles.selected : ''}`}>
+                                className={`${styles.timeButton} ${time === selectedTime ? styles.selected : ''}`}
+                                onClick={() => handleTimeSelect(time)}>
                             {time}
                         </button>
                     ))}
@@ -36,27 +134,37 @@ const BookingPage: React.FC = () => {
 
             <div className={styles.formSection}>
                 <label>Доступные помещения</label>
-                <div className={styles.roomsList}>
-                    {rooms.map(room => (
-                        <div key={room.name}
-                             className={`${styles.roomCard} ${room.name === selectedRoom ? styles.selectedRoom : ''} ${!room.available ? styles.disabledRoom : ''}`}>
-                            <div className={styles.roomDetails}>
-                                <p className={styles.roomName}>{room.name}</p>
-                                <p className={styles.roomMeta}>{`${room.capacity} мест • Этаж ${room.floor}`}</p>
-                                <div className={styles.tags}>
-                                    {room.tags.map(tag => <span key={tag} className={styles.tag}>{tag}</span>)}
+                {isLoading && <p>Загрузка помещений...</p>}
+                {!isLoading && error && <p style={{color: 'var(--red-cancel)'}}>{error}</p>}
+                {!isLoading && selectedTime && (
+                    <div className={styles.roomsList}>
+                        {allRooms.map(room => {
+                            const isAvailable = roomAvailability.get(room.roomId) ?? false;
+                            return (
+                                <div key={room.roomId}
+                                     onClick={() => handleRoomSelect(room.roomId, isAvailable)}
+                                     className={`${styles.roomCard} 
+                                       ${room.roomId === selectedRoomId ? styles.selectedRoom : ''} 
+                                       ${!isAvailable ? styles.disabledRoom : ''}`}>
+                                    <div className={styles.roomDetails}>
+                                        <p className={styles.roomName}>{room.roomName}</p>
+                                        {/* TODO: Добавить мета-информацию о комнате */}
+                                    </div>
+                                    <span
+                                        className={`${styles.statusTag} ${isAvailable ? styles.available : styles.booked}`}>
+                                {isAvailable ? 'Свободно' : 'Занято'}
+                              </span>
                                 </div>
-                            </div>
-                            <span
-                                className={`${styles.statusTag} ${room.available ? styles.available : styles.booked}`}>
-                                {room.available ? 'Свободно' : 'Занято'}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
-            <button className={styles.submitButton}>Забронировать</button>
+            <button className={styles.submitButton} onClick={handleSubmit}
+                    disabled={!selectedTime || !selectedRoomId || isSubmitting}>
+                {isSubmitting ? 'Бронируем...' : 'Забронировать'}
+            </button>
         </div>
     );
 };
