@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import styles from './MyBookingsPage.module.css';
 import {cancelBooking, getMyBookings} from '../services/api';
 import type {BookingResponse, BookingStatus} from '../types/booking';
+import BookingCardSkeleton from "../components/BookingCardSkeleton.tsx";
 
 const formatBookingDate = (isoString: string): string => {
     return new Date(isoString).toLocaleDateString('ru-RU', {
@@ -26,7 +27,7 @@ const statusMap: Record<BookingStatus, { text: string; className: string }> = {
 
 
 const MyBookingsPage: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+    const [activeTab] = useState<'active' | 'history'>('active');
     const [bookings, setBookings] = useState<BookingResponse[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -117,26 +118,22 @@ const MyBookingsPage: React.FC = () => {
 
     return (
         <div className={styles.pageContainer}>
-            <h1>Мои бронирования</h1>
-            <div className={styles.tabs}>
-                <button
-                    className={`${styles.tab} ${activeTab === 'active' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('active')}>
-                    Активные ({activeBookings.length})
-                </button>
-                <button
-                    className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('history')}>
-                    История ({historyBookings.length})
-                </button>
-            </div>
             <div className={styles.bookingsList}>
-                {isLoading && <p>Загрузка...</p>}
-                {error && <p style={{color: 'var(--red-cancel)'}}>{error}</p>}
-                {!isLoading && !error && displayedBookings.length === 0 && (
-                    <p>У вас нет {activeTab === 'active' ? 'активных' : 'прошедших'} бронирований.</p>
+                {isLoading ? (
+                    <>
+                        <BookingCardSkeleton/>
+                        <BookingCardSkeleton/>
+                        <BookingCardSkeleton/>
+                    </>
+                ) : (
+                    <>
+                        {error && <p style={{color: 'var(--red-cancel)'}}>{error}</p>}
+                        {!error && displayedBookings.length === 0 && (
+                            <p>У вас нет {activeTab === 'active' ? 'активных' : 'прошедших'} бронирований.</p>
+                        )}
+                        {!error && displayedBookings.map(renderBookingCard)}
+                    </>
                 )}
-                {!isLoading && !error && displayedBookings.map(renderBookingCard)}
             </div>
         </div>
     );

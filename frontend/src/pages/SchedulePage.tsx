@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import styles from './SchedulePage.module.css';
 import {fetchSchedule} from '../services/api';
 import type {ScheduleView} from '../types/booking';
+import SchedulePageSkeleton from "../components/SchedulePageSkeleton.tsx";
 
 const formatDateForApi = (date: Date): string => {
     return date.toISOString().split('T')[0];
@@ -55,7 +56,7 @@ const SchedulePage: React.FC = () => {
 
     const renderContent = () => {
         if (isLoading) {
-            return <p>Загрузка расписания...</p>; // TODO: Заменить на компонент-скелет
+            return <SchedulePageSkeleton />;
         }
         if (error) {
             return <p style={{color: 'var(--red-cancel)'}}>{error}</p>;
