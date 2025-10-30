@@ -4,8 +4,10 @@ import iwkms.roomflow.app.web.exception.dto.ErrorResponseDto;
 import iwkms.roomflow.app.web.exception.dto.ValidationErrorResponseDto;
 import iwkms.roomflow.exception.BookingConflictException;
 import iwkms.roomflow.exception.ResourceNotFoundException;
+import iwkms.roomflow.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -39,6 +41,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BookingConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponseDto handleBookingConflictException(BookingConflictException ex) {
+        return new ErrorResponseDto(HttpStatus.CONFLICT.value(), ex.getMessage());
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponseDto handleBadCredentialsException(BadCredentialsException ex) {
+        return new ErrorResponseDto(HttpStatus.UNAUTHORIZED.value(), "Invalid email or password");
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponseDto handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
         return new ErrorResponseDto(HttpStatus.CONFLICT.value(), ex.getMessage());
     }
 
