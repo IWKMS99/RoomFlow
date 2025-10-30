@@ -121,3 +121,76 @@
     display: flex;
     justify-content: center;
 }
+
+.sidebarFooter {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.rulesBox {
+    background-color: #ffc1071a;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.rulesIcon {
+    font-size: 1.2rem;
+    color: var(--yellow-warning);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.rulesContent h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.rulesContent ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.userInfo {
+    border-top: 1px solid var(--border-color);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.userEmail {
+    margin: 0;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.logoutButton {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.logoutButton:hover {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+}

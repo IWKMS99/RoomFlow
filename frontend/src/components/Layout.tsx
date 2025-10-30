@@ -7,6 +7,7 @@ import {Toaster} from "react-hot-toast";
 const ListIcon = () => <span>📋</span>;
 const CalendarIcon = () => <span>📅</span>;
 const LogoutIcon = () => <span>🚪</span>;
+const RulesIcon = () => <span>💡</span>;
 
 const Layout: React.FC = () => {
     const {isAuthenticated, user, logout, isLoading} = useAuth();
@@ -58,18 +59,27 @@ const Layout: React.FC = () => {
                 </nav>
 
                 <div className={styles.sidebarFooter}>
+                    <div className={styles.rulesBox}>
+                        <div className={styles.rulesIcon}><RulesIcon/></div>
+                        <div className={styles.rulesContent}>
+                            <h4>Правила бронирования</h4>
+                            <ul>
+                                <li>Время работы: с 9:00 до 18:00.</li>
+                                <li>Бронирование возможно только на будущее время.</li>
+                                <li>Отмена бронирования доступна до его начала.</li>
+                            </ul>
+                        </div>
+                    </div>
+
                     {isAuthenticated ? (
                         <div className={styles.userInfo}>
-                            <p className={styles.userEmail}>{user?.sub}</p>
+                            <p className={styles.userEmail} title={user?.sub}>{user?.sub}</p>
                             <button onClick={handleLogout} className={styles.logoutButton}>
                                 <LogoutIcon/> Выйти
                             </button>
                         </div>
                     ) : (
                         <div className={styles.authButtons}>
-                            <NavLink to="/login" className={styles.navLink}>Вход</NavLink>
-                            <NavLink to="/register"
-                                     className={`${styles.navLink} ${styles.primary}`}>Регистрация</NavLink>
                         </div>
                     )}
                 </div>
