@@ -56,7 +56,13 @@ public class ScheduleService {
                                 booking.getStartTime().isBefore(currentSlotEnd) &&
                                         booking.getEndTime().isAfter(currentSlotStart)
                         );
-                return new RoomInScheduleViewDto(room.getId(), room.getName(), isAvailable);
+                return new RoomInScheduleViewDto(
+                        room.getId(),
+                        room.getName(),
+                        room.getCapacity(),
+                        room.getFloor(),
+                        isAvailable
+                );
             }).collect(Collectors.toList());
 
             timeSlots.add(new TimeSlotViewDto(slotTime, roomStatuses));

@@ -9,6 +9,8 @@ public record BookingResponseDto(
         UUID id,
         UUID roomId,
         String roomName,
+        int capacity,
+        int floor,
         UUID userId,
         LocalDateTime startTime,
         LocalDateTime endTime,

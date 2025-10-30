@@ -5,7 +5,8 @@ import java.util.UUID;
 public record RoomInScheduleViewDto(
         UUID roomId,
         String roomName,
+        int capacity,
+        int floor,
         boolean isAvailable
-        //TODO: В будущем можно добавить сюда bookingId, если комната занята
 ) {
 }

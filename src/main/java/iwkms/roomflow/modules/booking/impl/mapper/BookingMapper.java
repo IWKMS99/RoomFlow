@@ -11,6 +11,8 @@ public class BookingMapper {
                 booking.getId(),
                 booking.getRoom().getId(),
                 booking.getRoom().getName(),
+                booking.getRoom().getCapacity(),
+                booking.getRoom().getFloor(),
                 booking.getUserId(),
                 booking.getStartTime(),
                 booking.getEndTime(),
