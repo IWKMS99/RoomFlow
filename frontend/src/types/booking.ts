@@ -4,6 +4,8 @@ export interface BookingResponse {
     id: string;
     roomId: string;
     roomName: string;
+    capacity: number;
+    floor: number;
     userId: string;
     startTime: string;
     endTime: string;
@@ -13,6 +15,8 @@ export interface BookingResponse {
 export interface RoomInSchedule {
     roomId: string;
     roomName: string;
+    capacity: number;
+    floor: number;
     isAvailable: boolean;
 }
 

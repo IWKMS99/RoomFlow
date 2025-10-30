@@ -156,7 +156,7 @@ const BookingPage: React.FC = () => {
                                        ${!isAvailable ? styles.disabledRoom : ''}`}>
                                     <div className={styles.roomDetails}>
                                         <p className={styles.roomName}>{room.roomName}</p>
-                                        {/* TODO: Добавить мета-информацию о комнате */}
+                                        <p className={styles.roomMeta}>{room.capacity} мест • Этаж {room.floor}</p>
                                     </div>
                                     <span
                                         className={`${styles.statusTag} ${isAvailable ? styles.available : styles.booked}`}>

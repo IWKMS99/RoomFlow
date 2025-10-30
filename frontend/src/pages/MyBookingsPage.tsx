@@ -92,6 +92,7 @@ const MyBookingsPage: React.FC = () => {
                 <div className={styles.cardTop}>
                     <div>
                         <p className={styles.roomName}>{booking.roomName}</p>
+                        <p className={styles.roomMeta}>{booking.capacity} мест • Этаж {booking.floor}</p>
                         <p className={styles.dateTime}>
                             {formatBookingDate(booking.startTime)} • {formatBookingTime(booking.startTime, booking.endTime)}
                         </p>
