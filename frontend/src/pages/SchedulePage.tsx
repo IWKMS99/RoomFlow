@@ -5,7 +5,10 @@ import type {ScheduleView} from '../types/booking';
 import SchedulePageSkeleton from "../components/SchedulePageSkeleton.tsx";
 
 const formatDateForApi = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 const formatDateForDisplay = (date: Date): string => {

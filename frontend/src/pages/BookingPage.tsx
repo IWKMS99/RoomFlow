@@ -5,8 +5,26 @@ import {createBooking, fetchSchedule} from '../services/api';
 import type {ScheduleView} from '../types/booking';
 import toast from "react-hot-toast";
 
+const formatDateForApi = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const formatDateForInput = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    return formatDateForApi(date);
+};
+
+const formatLocalTimeForApi = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
 
 const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
@@ -23,25 +41,27 @@ const BookingPage: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const loadSchedule = async () => {
+        setIsLoading(true);
+        setError(null);
+        setSelectedTime(null);
+        setSelectedRoomId(null);
+        try {
+            const dateString = formatDateForInput(selectedDate);
+            const data = await fetchSchedule(dateString);
+            setSchedule(data);
+        } catch (err) {
+            console.error("Failed to fetch schedule:", err);
+            setError("Не удалось загрузить доступные слоты.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const loadSchedule = async () => {
-            setIsLoading(true);
-            setError(null);
-            setSelectedTime(null);
-            setSelectedRoomId(null);
-            try {
-                const dateString = formatDateForInput(selectedDate);
-                const data = await fetchSchedule(dateString);
-                setSchedule(data);
-            } catch (err) {
-                console.error("Failed to fetch schedule:", err);
-                setError("Не удалось загрузить доступные слоты.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
         loadSchedule();
     }, [selectedDate]);
+
 
     const roomAvailability = useMemo(() => {
         if (!selectedTime || !schedule) {
@@ -77,6 +97,7 @@ const BookingPage: React.FC = () => {
         }
 
         setIsSubmitting(true);
+        setError(null);
 
         try {
             const [hour, minute] = selectedTime.split(':').map(Number);
@@ -88,8 +109,8 @@ const BookingPage: React.FC = () => {
 
             const payload = {
                 roomId: selectedRoomId,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
+                startTime: formatLocalTimeForApi(startTime),
+                endTime: formatLocalTimeForApi(endTime),
             };
 
             const response = await createBooking(payload);
@@ -108,10 +129,13 @@ const BookingPage: React.FC = () => {
 
         } catch (err: any) {
             console.error("Failed to create booking:", err);
-            const errorMessage = err.response?.status === 409
-                ? "К сожалению, эта комната уже занята. Пожалуйста, выберите другое время."
-                : (err.response?.data?.message || "Произошла ошибка при бронировании.");
-            toast.error(errorMessage);
+            if (err.response?.status === 409) {
+                toast.error("Эта комната уже занята. Расписание обновлено.");
+                loadSchedule();
+            } else {
+                const errorMessage = err.response?.data?.message || "Произошла ошибка при бронировании.";
+                toast.error(errorMessage);
+            }
         } finally {
             setIsSubmitting(false);
         }
