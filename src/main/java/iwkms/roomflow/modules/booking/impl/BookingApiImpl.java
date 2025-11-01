@@ -9,13 +9,12 @@ import iwkms.roomflow.modules.booking.impl.domain.Booking;
 import iwkms.roomflow.modules.booking.impl.mapper.BookingMapper;
 import iwkms.roomflow.modules.booking.impl.service.BookingManagementService;
 import iwkms.roomflow.modules.booking.impl.service.ScheduleService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -35,7 +34,6 @@ public class BookingApiImpl implements BookingApi {
     public void cancelBooking(CancelBookingDto command) {
         bookingManagementService.cancelBooking(command);
     }
-
 
     @Override
     public List<BookingResponseDto> findByUserId(UUID userId) {

@@ -1,5 +1,14 @@
 package iwkms.roomflow;
 
+import static iwkms.roomflow.util.Constants.Test.*;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import iwkms.roomflow.modules.booking.api.dto.CreateBookingRequestDto;
 import iwkms.roomflow.modules.booking.impl.domain.Booking;
@@ -10,6 +19,11 @@ import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,21 +36,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import static iwkms.roomflow.util.Constants.Test.*;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
@@ -45,14 +44,19 @@ class BookingControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private ObjectMapper objectMapper;
+
     @Autowired
     private BookingRepository bookingRepository;
+
     @Autowired
     private RoomRepository roomRepository;
+
     @Autowired
     private UserRepository userRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -61,22 +65,44 @@ class BookingControllerIT {
 
     @BeforeEach
     void setUp() {
-        testUser1 = User.builder().id(USER_ID_1).email("user1@test.com").password(passwordEncoder.encode("password")).roles(Set.of(Role.ROLE_USER)).build();
-        testUser2 = User.builder().id(USER_ID_2).email("user2@test.com").password(passwordEncoder.encode("password")).roles(Set.of(Role.ROLE_USER)).build();
-        testUser3 = User.builder().id(USER_ID_3).email("user3@test.com").password(passwordEncoder.encode("password")).roles(Set.of(Role.ROLE_USER)).build();
-        testUser4 = User.builder().id(USER_ID_4).email("user4@test.com").password(passwordEncoder.encode("password")).roles(Set.of(Role.ROLE_USER)).build();
+        testUser1 = User.builder()
+                .id(USER_ID_1)
+                .email("user1@test.com")
+                .password(passwordEncoder.encode("password"))
+                .roles(Set.of(Role.ROLE_USER))
+                .build();
+        testUser2 = User.builder()
+                .id(USER_ID_2)
+                .email("user2@test.com")
+                .password(passwordEncoder.encode("password"))
+                .roles(Set.of(Role.ROLE_USER))
+                .build();
+        testUser3 = User.builder()
+                .id(USER_ID_3)
+                .email("user3@test.com")
+                .password(passwordEncoder.encode("password"))
+                .roles(Set.of(Role.ROLE_USER))
+                .build();
+        testUser4 = User.builder()
+                .id(USER_ID_4)
+                .email("user4@test.com")
+                .password(passwordEncoder.encode("password"))
+                .roles(Set.of(Role.ROLE_USER))
+                .build();
         userRepository.saveAll(List.of(testUser1, testUser2, testUser3, testUser4));
-        roomA = roomRepository.findById(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")).orElseThrow();
+        roomA = roomRepository
+                .findById(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+                .orElseThrow();
     }
 
     @Test
-    @DisplayName("POST /bookings -> GET /my-bookings: должен создать бронирование для аутентифицированного пользователя и успешно его получить")
+    @DisplayName(
+            "POST /bookings -> GET /my-bookings: должен создать бронирование для аутентифицированного пользователя и успешно его получить")
     void shouldCreateBookingAndRetrieveItSuccessfully() throws Exception {
         CreateBookingRequestDto createRequest = new CreateBookingRequestDto(
                 ROOM_A_ID,
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withNano(0),
-                LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withNano(0)
-        );
+                LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withNano(0));
 
         mockMvc.perform(post("/api/v1/bookings")
                         .with(user(testUser1))
@@ -86,8 +112,7 @@ class BookingControllerIT {
                 .andExpect(jsonPath("$.userId", is(USER_ID_1.toString())))
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
-        mockMvc.perform(get("/api/v1/my-bookings")
-                        .with(user(testUser1)))
+        mockMvc.perform(get("/api/v1/my-bookings").with(user(testUser1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].userId", is(USER_ID_1.toString())));
@@ -97,7 +122,14 @@ class BookingControllerIT {
     @DisplayName("GET /schedule: должен вернуть корректную сетку занятости (требует аутентификации)")
     void shouldReturnCorrectScheduleForDate() throws Exception {
         LocalDate testDate = LocalDate.now().plusDays(1);
-        Booking bookingForRoomA = Booking.builder().id(UUID.randomUUID()).room(roomA).userId(testUser2.getId()).startTime(testDate.atTime(10, 0)).endTime(testDate.atTime(11, 0)).status(BookingStatus.CONFIRMED).build();
+        Booking bookingForRoomA = Booking.builder()
+                .id(UUID.randomUUID())
+                .room(roomA)
+                .userId(testUser2.getId())
+                .startTime(testDate.atTime(10, 0))
+                .endTime(testDate.atTime(11, 0))
+                .status(BookingStatus.CONFIRMED)
+                .build();
         bookingRepository.save(bookingForRoomA);
 
         mockMvc.perform(get("/api/v1/schedule")
@@ -112,14 +144,21 @@ class BookingControllerIT {
     @Test
     @DisplayName("DELETE /bookings/{id}: должен успешно отменить существующее бронирование")
     void shouldCancelBookingSuccessfully() throws Exception {
-        Booking bookingToCancel = Booking.builder().id(UUID.randomUUID()).room(roomA).userId(testUser3.getId()).startTime(LocalDateTime.now().plusDays(2).withHour(14).withMinute(0)).endTime(LocalDateTime.now().plusDays(2).withHour(15).withMinute(0)).status(BookingStatus.CONFIRMED).build();
+        Booking bookingToCancel = Booking.builder()
+                .id(UUID.randomUUID())
+                .room(roomA)
+                .userId(testUser3.getId())
+                .startTime(LocalDateTime.now().plusDays(2).withHour(14).withMinute(0))
+                .endTime(LocalDateTime.now().plusDays(2).withHour(15).withMinute(0))
+                .status(BookingStatus.CONFIRMED)
+                .build();
         bookingRepository.saveAndFlush(bookingToCancel);
 
-        mockMvc.perform(delete("/api/v1/bookings/" + bookingToCancel.getId())
-                        .with(user(testUser3)))
+        mockMvc.perform(delete("/api/v1/bookings/" + bookingToCancel.getId()).with(user(testUser3)))
                 .andExpect(status().isNoContent());
 
-        Booking updatedBooking = bookingRepository.findById(bookingToCancel.getId()).orElseThrow();
+        Booking updatedBooking =
+                bookingRepository.findById(bookingToCancel.getId()).orElseThrow();
         assertEquals(BookingStatus.CANCELLED, updatedBooking.getStatus());
     }
 
@@ -128,8 +167,7 @@ class BookingControllerIT {
     void shouldReturnNotFoundForNonExistentBooking() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
 
-        mockMvc.perform(delete("/api/v1/bookings/" + nonExistentId)
-                        .with(user(testUser1)))
+        mockMvc.perform(delete("/api/v1/bookings/" + nonExistentId).with(user(testUser1)))
                 .andExpect(status().isNotFound());
     }
 
@@ -139,8 +177,7 @@ class BookingControllerIT {
         CreateBookingRequestDto invalidRequest = new CreateBookingRequestDto(
                 ROOM_A_ID,
                 LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withNano(0),
-                LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withNano(0)
-        );
+                LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withNano(0));
 
         mockMvc.perform(post("/api/v1/bookings")
                         .with(user(testUser1))
@@ -153,14 +190,20 @@ class BookingControllerIT {
     @Test
     @DisplayName("POST /bookings: должен вернуть 409 Conflict при попытке забронировать уже занятое время")
     void shouldReturnConflictWhenBookingOverlaps() throws Exception {
-        Booking initialBooking = Booking.builder().id(UUID.randomUUID()).room(roomA).userId(testUser4.getId()).startTime(LocalDateTime.now().plusDays(3).withHour(12).withMinute(0)).endTime(LocalDateTime.now().plusDays(3).withHour(13).withMinute(0)).status(BookingStatus.CONFIRMED).build();
+        Booking initialBooking = Booking.builder()
+                .id(UUID.randomUUID())
+                .room(roomA)
+                .userId(testUser4.getId())
+                .startTime(LocalDateTime.now().plusDays(3).withHour(12).withMinute(0))
+                .endTime(LocalDateTime.now().plusDays(3).withHour(13).withMinute(0))
+                .status(BookingStatus.CONFIRMED)
+                .build();
         bookingRepository.saveAndFlush(initialBooking);
 
         CreateBookingRequestDto conflictingRequest = new CreateBookingRequestDto(
                 ROOM_A_ID,
                 LocalDateTime.now().plusDays(3).withHour(12).withMinute(30),
-                LocalDateTime.now().plusDays(3).withHour(13).withMinute(30)
-        );
+                LocalDateTime.now().plusDays(3).withHour(13).withMinute(30));
 
         mockMvc.perform(post("/api/v1/bookings")
                         .with(user(testUser1))

@@ -8,14 +8,13 @@ import iwkms.roomflow.modules.user.api.dto.RegisterRequestDto;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -45,14 +44,9 @@ public class AuthService {
 
     public AuthResponseDto login(LoginRequestDto request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.password()
-                )
-        );
+                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
-        var user = userRepository.findByEmail(request.email())
-                .orElseThrow();
+        var user = userRepository.findByEmail(request.email()).orElseThrow();
 
         var jwtToken = jwtService.generateToken(user);
         return new AuthResponseDto(jwtToken);

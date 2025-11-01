@@ -8,10 +8,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Constraint(validatedBy = ValidBookingPeriodValidator.class)
-@Target({ ElementType.TYPE })
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidBookingPeriod {
     String message() default "End time must be after start time";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }

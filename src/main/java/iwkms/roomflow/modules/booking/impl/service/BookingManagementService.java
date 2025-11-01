@@ -11,13 +11,12 @@ import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
 import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,12 +27,12 @@ public class BookingManagementService {
     private final RoomRepository roomRepository;
 
     public Booking bookRoom(BookRoomDto command) {
-        Room room = roomRepository.findById(command.roomId())
+        Room room = roomRepository
+                .findById(command.roomId())
                 .orElseThrow(() -> new ResourceNotFoundException("Room with id " + command.roomId() + " not found"));
 
-        List<Booking> conflictingBookings = bookingRepository.findConflictingBookings(
-                command.roomId(), command.startTime(), command.endTime()
-        );
+        List<Booking> conflictingBookings =
+                bookingRepository.findConflictingBookings(command.roomId(), command.startTime(), command.endTime());
 
         if (!conflictingBookings.isEmpty()) {
             throw new BookingConflictException("Room is already booked for the selected time period.");
@@ -50,11 +49,11 @@ public class BookingManagementService {
         return bookingRepository.save(booking);
     }
 
-
     public void cancelBooking(CancelBookingDto command) {
-        Booking booking = bookingRepository.findById(command.bookingId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Booking with id " + command.bookingId() + " not found"));
+        Booking booking = bookingRepository
+                .findById(command.bookingId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Booking with id " + command.bookingId() + " not found"));
 
         User currentUser = command.currentUser();
 

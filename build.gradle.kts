@@ -1,7 +1,13 @@
+import com.github.spotbugs.snom.Confidence
+import com.github.spotbugs.snom.Effort
+import com.github.spotbugs.snom.SpotBugsTask
+
 plugins {
     java
     id("org.springframework.boot") version "3.5.6"
     id("io.spring.dependency-management") version "1.1.7"
+    id("com.github.spotbugs") version "6.2.4"
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 group = "iwkms.roomflow"
@@ -51,4 +57,49 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+spotbugs {
+    effort = Effort.MAX
+    reportLevel = Confidence.MEDIUM
+    excludeFilter = file("config/spotbugs/spotbugsExclude.xml")
+}
+
+tasks.withType<SpotBugsTask> {
+    reports.create("html") {
+        required = true
+        outputLocation = layout.buildDirectory.dir("reports/spotbugs/main/spotbugs.html").get().asFile
+    }
+    reports.create("xml") {
+        required = false
+    }
+}
+
+spotless {
+    format("misc") {
+        target("*.gradle", "*.md", ".gitignore", "*.yml", "*.properties")
+        trimTrailingWhitespace()
+        indentWithSpaces(4)
+        endWithNewline()
+    }
+    java {
+        target("src/**/*.java")
+        palantirJavaFormat()
+        indentWithSpaces(4)
+        removeUnusedImports()
+        importOrder()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("*.gradle.kts", "settings.gradle.kts")
+        ktlint("0.50.0")
+        indentWithSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+tasks.named("check") {
+    dependsOn("spotbugsMain", "spotbugsTest", "spotlessCheck")
 }

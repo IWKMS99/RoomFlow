@@ -20,17 +20,23 @@ public interface AuthApiContract {
     @RequestBody(
             description = "Данные для регистрации",
             required = true,
-            content = @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = RegisterRequestDto.class),
-                    examples = @ExampleObject(value = "{\"email\": \"new.user@example.com\", \"password\": \"password123\"}")
-            )
-    )
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RegisterRequestDto.class),
+                            examples =
+                                    @ExampleObject(
+                                            value =
+                                                    "{\"email\": \"new.user@example.com\", \"password\": \"password123\"}")))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегистрирован, возвращается JWT токен",
-                    content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Ошибка валидации данных (например, некорректный email или короткий пароль)"),
-            @ApiResponse(responseCode = "409", description = "Пользователь с таким email уже существует")
+        @ApiResponse(
+                responseCode = "200",
+                description = "Пользователь успешно зарегистрирован, возвращается JWT токен",
+                content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Ошибка валидации данных (например, некорректный email или короткий пароль)"),
+        @ApiResponse(responseCode = "409", description = "Пользователь с таким email уже существует")
     })
     ResponseEntity<AuthResponseDto> register(RegisterRequestDto request);
 
@@ -38,16 +44,20 @@ public interface AuthApiContract {
     @RequestBody(
             description = "Учетные данные для входа",
             required = true,
-            content = @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = LoginRequestDto.class),
-                    examples = @ExampleObject(value = "{\"email\": \"user@example.com\", \"password\": \"password123\"}")
-            )
-    )
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LoginRequestDto.class),
+                            examples =
+                                    @ExampleObject(
+                                            value =
+                                                    "{\"email\": \"user@example.com\", \"password\": \"password123\"}")))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Успешный вход, возвращается JWT токен",
-                    content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
-            @ApiResponse(responseCode = "401", description = "Неверный email или пароль")
+        @ApiResponse(
+                responseCode = "200",
+                description = "Успешный вход, возвращается JWT токен",
+                content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
+        @ApiResponse(responseCode = "401", description = "Неверный email или пароль")
     })
     ResponseEntity<AuthResponseDto> login(LoginRequestDto request);
 }

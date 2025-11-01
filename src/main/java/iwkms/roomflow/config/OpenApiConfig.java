@@ -22,7 +22,8 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("RoomFlow API")
                         .version("1.0.0")
-                        .description("""
+                        .description(
+                                """
                                 API для системы бронирования переговорных комнат RoomFlow.
                                 Позволяет создавать, отменять и просматривать бронирования,
                                 а также получать расписание занятости комнат.
@@ -31,23 +32,20 @@ public class OpenApiConfig {
                                 .name("Алиев Саид")
                                 .email("alievsaid0909@yandex.ru")
                                 .url("https://github.com/IWKMS99/RoomFlow"))
-                        .license(new License()
-                                .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")))
-
-                .addServersItem(new Server()
-                        .url("http://localhost:8084")
-                        .description("Локальный сервер для разработки"))
-
+                        .license(new License().name("MIT License").url("https://opensource.org/licenses/MIT")))
+                .addServersItem(
+                        new Server().url("http://localhost:8084").description("Локальный сервер для разработки"))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
-                .components(new Components()
-                        .addSecuritySchemes(securitySchemeName, new SecurityScheme()
-                                .name(securitySchemeName)
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")
-                                .description("Для доступа к API необходимо передать JWT токен в заголовке Authorization.")
-                        )
-                );
+                .components(
+                        new Components()
+                                .addSecuritySchemes(
+                                        securitySchemeName,
+                                        new SecurityScheme()
+                                                .name(securitySchemeName)
+                                                .type(SecurityScheme.Type.HTTP)
+                                                .scheme("bearer")
+                                                .bearerFormat("JWT")
+                                                .description(
+                                                        "Для доступа к API необходимо передать JWT токен в заголовке Authorization.")));
     }
 }

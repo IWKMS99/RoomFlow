@@ -5,8 +5,7 @@ import java.util.UUID;
 
 public final class Constants {
 
-    private Constants() {
-    }
+    private Constants() {}
 
     public static final class Test {
         public static final UUID ROOM_A_ID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");

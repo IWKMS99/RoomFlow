@@ -4,16 +4,15 @@ import iwkms.roomflow.modules.booking.api.BookingApi;
 import iwkms.roomflow.modules.booking.api.dto.*;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import jakarta.validation.Valid;
+import java.net.URI;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -26,14 +25,11 @@ public class BookingController implements BookingApiContract {
     @PostMapping("/bookings")
     public ResponseEntity<BookingResponseDto> createBooking(@Valid @RequestBody CreateBookingRequestDto request) {
         User currentUser = getCurrentUser();
-        BookRoomDto command = new BookRoomDto(
-                currentUser.getId(),
-                request.roomId(),
-                request.startTime(),
-                request.endTime()
-        );
+        BookRoomDto command =
+                new BookRoomDto(currentUser.getId(), request.roomId(), request.startTime(), request.endTime());
         BookingResponseDto response = bookingApi.bookRoom(command);
-        return ResponseEntity.created(URI.create("/api/v1/bookings/" + response.id())).body(response);
+        return ResponseEntity.created(URI.create("/api/v1/bookings/" + response.id()))
+                .body(response);
     }
 
     @Override
