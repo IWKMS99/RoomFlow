@@ -8,6 +8,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     id("com.github.spotbugs") version "6.2.4"
     id("com.diffplug.spotless") version "6.25.0"
+    pmd
 }
 
 group = "iwkms.roomflow"
@@ -100,6 +101,11 @@ spotless {
     }
 }
 
+pmd {
+    isConsoleOutput = true
+    ruleSets = listOf("category/java/bestpractices.xml")
+}
+
 tasks.named("check") {
-    dependsOn("spotbugsMain", "spotbugsTest", "spotlessCheck")
+    dependsOn("spotbugsMain", "spotbugsTest", "spotlessCheck", "pmdMain")
 }
