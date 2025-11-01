@@ -11,6 +11,7 @@ import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
 import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
+import iwkms.roomflow.modules.user.impl.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class BookingManagementService {
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
+    private final UserRepository userRepository;
 
     public Booking bookRoom(BookRoomDto command) {
         Room room = roomRepository
@@ -55,7 +57,10 @@ public class BookingManagementService {
                 .orElseThrow(
                         () -> new ResourceNotFoundException("Booking with id " + command.bookingId() + " not found"));
 
-        User currentUser = command.currentUser();
+        User currentUser = userRepository
+                .findById(command.currentUserId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("User with id " + command.currentUserId() + " not found"));
 
         boolean isOwner = booking.getUserId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getAuthorities().stream()
