@@ -5,9 +5,9 @@ services:
     image: postgres:16-alpine
     container_name: roomflow-postgres
     environment:
-      POSTGRES_DB: roomflow_db
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: fialka
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5435:5432"
     volumes:
@@ -18,9 +18,9 @@ services:
     container_name: roomflow-app
     build: .
     ports:
-      - "8081:8084"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
+      - "8081:${SERVER_PORT}"
+    env_file:
+      - ./.env
     depends_on:
       - db
     restart: on-failure
