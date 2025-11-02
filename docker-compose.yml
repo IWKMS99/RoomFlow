@@ -16,7 +16,9 @@ services:
 
   app:
     container_name: roomflow-app
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8081:${SERVER_PORT}"
     env_file:
