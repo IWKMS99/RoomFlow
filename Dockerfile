@@ -5,6 +5,7 @@ COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts ./
 RUN ./gradlew dependencies
 COPY src ./src
+COPY config ./config
 RUN ./gradlew build -x test
 
 FROM eclipse-temurin:21-jre-jammy
@@ -13,4 +14,4 @@ RUN adduser --system --group springuser
 COPY --from=builder /app/build/libs/*.jar app.jar
 RUN chown springuser:springuser app.jar
 USER springuser
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java -jar app.jar"]

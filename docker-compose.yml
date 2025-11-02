@@ -13,6 +13,11 @@ services:
     volumes:
       - roomflow-pg-data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   app:
     container_name: roomflow-app
@@ -23,8 +28,11 @@ services:
       - "8081:${SERVER_PORT}"
     env_file:
       - ./.env
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: on-failure
 
 volumes:
