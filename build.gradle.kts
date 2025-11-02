@@ -87,10 +87,6 @@ spotless {
     java {
         target("src/**/*.java")
         palantirJavaFormat()
-        indentWithSpaces(4)
-        removeUnusedImports()
-        importOrder()
-        trimTrailingWhitespace()
         endWithNewline()
     }
     kotlinGradle {
@@ -103,6 +99,7 @@ spotless {
 }
 
 pmd {
+    toolVersion = "6.55.0"
     isConsoleOutput = true
     ruleSets = listOf("category/java/bestpractices.xml")
 }
