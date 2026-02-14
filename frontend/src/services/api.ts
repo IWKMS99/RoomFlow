@@ -1,6 +1,12 @@
 import axios from 'axios';
 import type {BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
 
+export interface AdminUser {
+    id: string;
+    email: string;
+    roles: string[];
+}
+
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
     headers: {
@@ -64,3 +70,13 @@ export const loginUser = async (payload: any) => {
     const response = await apiClient.post('/auth/login', payload);
     return response.data;
 }
+
+export const getAdminUsers = async (): Promise<AdminUser[]> => {
+    const response = await apiClient.get<AdminUser[]>('/admin/users');
+    return response.data;
+};
+
+export const updateUserRole = async (userId: string, role: 'ROLE_USER' | 'ROLE_ADMIN'): Promise<AdminUser> => {
+    const response = await apiClient.put<AdminUser>(`/admin/users/${userId}/role`, {role});
+    return response.data;
+};
