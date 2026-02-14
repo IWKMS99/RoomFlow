@@ -8,9 +8,10 @@ const ListIcon = () => <span>📋</span>;
 const CalendarIcon = () => <span>📅</span>;
 const LogoutIcon = () => <span>🚪</span>;
 const RulesIcon = () => <span>💡</span>;
+const AdminIcon = () => <span>🛠️</span>;
 
 const Layout: React.FC = () => {
-    const {isAuthenticated, user, logout, isLoading} = useAuth();
+    const {isAuthenticated, isAdmin, user, logout, isLoading} = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -49,6 +50,12 @@ const Layout: React.FC = () => {
                                      className={({isActive}) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
                                 <CalendarIcon/> Журнал занятости
                             </NavLink>
+                            {isAdmin && (
+                                <NavLink to="/admin"
+                                         className={({isActive}) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
+                                    <AdminIcon/> Админ-панель
+                                </NavLink>
+                            )}
                         </>
                     ) : (
                         <NavLink to="/schedule"
@@ -80,6 +87,13 @@ const Layout: React.FC = () => {
                         </div>
                     ) : (
                         <div className={styles.authButtons}>
+                            <p className={styles.authHint}>Чтобы бронировать комнаты, войдите в аккаунт</p>
+                            <NavLink to="/login" className={`${styles.authLink} ${styles.authPrimary}`}>
+                                Войти
+                            </NavLink>
+                            <NavLink to="/register" className={styles.authLink}>
+                                Регистрация
+                            </NavLink>
                         </div>
                     )}
                 </div>

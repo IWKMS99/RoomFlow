@@ -194,3 +194,42 @@
     background-color: var(--bg-card);
     color: var(--text-primary);
 }
+
+.authButtons {
+    border-top: 1px solid var(--border-color);
+    padding-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.authHint {
+    margin: 0 0 4px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.authLink {
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    text-align: center;
+    font-weight: 500;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.authLink:hover {
+    background-color: var(--bg-card);
+}
+
+.authPrimary {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.authPrimary:hover {
+    background-color: var(--primary-blue-hover);
+    border-color: var(--primary-blue-hover);
+}

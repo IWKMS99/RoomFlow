@@ -14,6 +14,8 @@ import BookingPage from './pages/BookingPage.tsx';
 import ConfirmationPage from './pages/ConfirmationPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
+import RoleProtectedRoute from './components/RoleProtectedRoute.tsx';
+import AdminPage from './pages/AdminPage.tsx';
 
 const router = createBrowserRouter([
     {
@@ -55,6 +57,15 @@ const router = createBrowserRouter([
                     {
                         path: 'booking/confirmed',
                         element: <ConfirmationPage/>
+                    }
+                ]
+            },
+            {
+                element: <RoleProtectedRoute allowedRoles={['ROLE_ADMIN']}/>,
+                children: [
+                    {
+                        path: 'admin',
+                        element: <AdminPage/>
                     }
                 ]
             }
