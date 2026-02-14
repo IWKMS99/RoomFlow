@@ -119,7 +119,7 @@ class BookingControllerIT {
     }
 
     @Test
-    @DisplayName("GET /schedule: должен вернуть корректную сетку занятости (требует аутентификации)")
+    @DisplayName("GET /schedule: должен вернуть корректную сетку занятости")
     void shouldReturnCorrectScheduleForDate() throws Exception {
         LocalDate testDate = LocalDate.now().plusDays(1);
         Booking bookingForRoomA = Booking.builder()
@@ -139,6 +139,16 @@ class BookingControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.timeSlots", hasSize(9)))
                 .andExpect(jsonPath("$.timeSlots[1].rooms[0].isAvailable", is(false)));
+    }
+
+    @Test
+    @DisplayName("GET /schedule: должен быть доступен без авторизации")
+    void shouldAllowAnonymousAccessToSchedule() throws Exception {
+        LocalDate testDate = LocalDate.now().plusDays(1);
+
+        mockMvc.perform(get("/api/v1/schedule").param("date", testDate.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timeSlots", hasSize(9)));
     }
 
     @Test
@@ -169,6 +179,58 @@ class BookingControllerIT {
 
         mockMvc.perform(delete("/api/v1/bookings/" + nonExistentId).with(user(testUser1)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE /bookings/{id}: должен вернуть 403, если пользователь отменяет чужую бронь")
+    void shouldReturnForbiddenWhenUserCancelsForeignBooking() throws Exception {
+        Booking bookingToCancel = Booking.builder()
+                .id(UUID.randomUUID())
+                .room(roomA)
+                .userId(testUser1.getId())
+                .startTime(LocalDateTime.now().plusDays(2).withHour(14).withMinute(0))
+                .endTime(LocalDateTime.now().plusDays(2).withHour(15).withMinute(0))
+                .status(BookingStatus.CONFIRMED)
+                .build();
+        bookingRepository.saveAndFlush(bookingToCancel);
+
+        mockMvc.perform(delete("/api/v1/bookings/" + bookingToCancel.getId()).with(user(testUser2)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("DELETE /bookings/{id}: администратор может отменить чужую бронь")
+    void shouldAllowAdminToCancelForeignBooking() throws Exception {
+        User adminUser = User.builder()
+                .id(UUID.randomUUID())
+                .email("admin@test.com")
+                .password(passwordEncoder.encode("password"))
+                .roles(Set.of(Role.ROLE_ADMIN))
+                .build();
+        userRepository.saveAndFlush(adminUser);
+
+        Booking bookingToCancel = Booking.builder()
+                .id(UUID.randomUUID())
+                .room(roomA)
+                .userId(testUser1.getId())
+                .startTime(LocalDateTime.now().plusDays(2).withHour(14).withMinute(0))
+                .endTime(LocalDateTime.now().plusDays(2).withHour(15).withMinute(0))
+                .status(BookingStatus.CONFIRMED)
+                .build();
+        bookingRepository.saveAndFlush(bookingToCancel);
+
+        mockMvc.perform(delete("/api/v1/bookings/" + bookingToCancel.getId()).with(user(adminUser)))
+                .andExpect(status().isNoContent());
+
+        Booking updatedBooking =
+                bookingRepository.findById(bookingToCancel.getId()).orElseThrow();
+        assertEquals(BookingStatus.CANCELLED, updatedBooking.getStatus());
+    }
+
+    @Test
+    @DisplayName("GET /my-bookings: должен вернуть 401 без авторизации")
+    void shouldReturnUnauthorizedForProtectedEndpointWithoutToken() throws Exception {
+        mockMvc.perform(get("/api/v1/my-bookings")).andExpect(status().isUnauthorized());
     }
 
     @Test

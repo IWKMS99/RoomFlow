@@ -6,11 +6,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.io.Decoders;
 import iwkms.roomflow.modules.user.api.dto.LoginRequestDto;
 import iwkms.roomflow.modules.user.api.dto.RegisterRequestDto;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
 import iwkms.roomflow.modules.user.impl.service.AuthService;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
@@ -100,5 +104,28 @@ public class AuthControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("POST /auth/login: JWT должен содержать claim roles")
+    void shouldContainRolesClaimInJwt() throws Exception {
+        RegisterRequestDto registerRequest = new RegisterRequestDto("roles@test.com", "password123");
+        authService.register(registerRequest);
+
+        LoginRequestDto loginRequest = new LoginRequestDto("roles@test.com", "password123");
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String body = result.getResponse().getContentAsString();
+        String token = objectMapper.readTree(body).get("token").asText();
+        String payload = token.split("\\.")[1];
+        byte[] decodedPayload = Decoders.BASE64URL.decode(payload);
+        Map<String, Object> claims = objectMapper.readValue(decodedPayload, Map.class);
+        List<String> roles = (List<String>) claims.get("roles");
+
+        assertTrue(roles.contains("ROLE_USER"));
     }
 }
