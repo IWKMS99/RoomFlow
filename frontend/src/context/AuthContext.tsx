@@ -8,6 +8,8 @@ interface AuthContextType {
     user: DecodedToken | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isAdmin: boolean;
+    hasRole: (role: string) => boolean;
     login: (token: string) => void;
     logout: () => void;
 }
@@ -19,11 +21,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
     const [user, setUser] = useState<DecodedToken | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
+    const normalizeDecodedUser = (decoded: DecodedToken): DecodedToken => ({
+        ...decoded,
+        roles: Array.isArray(decoded.roles) ? decoded.roles : [],
+    });
+
     useEffect(() => {
         try {
             const storedToken = localStorage.getItem('authToken');
             if (storedToken) {
-                const decodedUser = jwtDecode<DecodedToken>(storedToken);
+                const decodedUser = normalizeDecodedUser(jwtDecode<DecodedToken>(storedToken));
                 if (decodedUser.exp * 1000 > Date.now()) {
                     setToken(storedToken);
                     setUser(decodedUser);
@@ -45,7 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
 
     const login = (newToken: string) => {
         try {
-            const decodedUser = jwtDecode<DecodedToken>(newToken);
+            const decodedUser = normalizeDecodedUser(jwtDecode<DecodedToken>(newToken));
             localStorage.setItem('authToken', newToken);
             setToken(newToken);
             setUser(decodedUser);
@@ -66,15 +73,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
     }, []);
 
     const isAuthenticated = !!token;
+    const hasRole = (role: string) => !!user?.roles?.includes(role);
+    const isAdmin = hasRole('ROLE_ADMIN');
 
     const value = useMemo(() => ({
         token,
         user,
         isAuthenticated,
         isLoading,
+        isAdmin,
+        hasRole,
         login,
         logout,
-    }), [token, user, isLoading]);
+    }), [token, user, isLoading, isAdmin]);
 
     return (
         <AuthContext.Provider value={value}>
