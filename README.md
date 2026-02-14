@@ -1,7 +1,7 @@
 # RoomFlow - Система бронирования переговорных комнат
 
 [![RoomFlow CI](https://github.com/IWKMS99/RoomFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/IWKMS99/RoomFlow/actions/workflows/ci.yml)
-![Java](https://img.shields.io/badge/Java-21-blue?style=for-the-badge&logo=openjdk)
+![Java](https://img.shields.io/badge/Java-24-blue?style=for-the-badge&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.6-green?style=for-the-badge&logo=spring)
 ![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=for-the-badge&logo=postgresql)
@@ -22,7 +22,7 @@
 <summary><strong>🛠️ Стек технологий</strong></summary>
 
 ### Backend
--   **Язык:** Java 21
+-   **Язык:** Java 24
 -   **Фреймворк:** Spring Boot 3
 -   **Доступ к данным:** Spring Data JPA (Hibernate)
 -   **База данных:** PostgreSQL
@@ -77,7 +77,7 @@ graph TD
 
 -   [Docker](https://www.docker.com/get-started) и Docker Compose
 -   [Node.js](https://nodejs.org/) v20+ и npm
--   [JDK](https://www.oracle.com/java/technologies/downloads/) 21 (для запуска бэкенда вне Docker)
+-   [JDK](https://www.oracle.com/java/technologies/downloads/) 24 (для запуска бэкенда вне Docker)
 
 ## ⚙️ Запуск проекта
 
