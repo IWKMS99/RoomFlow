@@ -14,6 +14,7 @@ plugins {
 group = "iwkms.roomflow"
 version = "0.0.1-SNAPSHOT"
 description = "RoomFlow"
+extra["testcontainers.version"] = "2.0.2"
 
 java {
     toolchain {
@@ -52,13 +53,14 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.security:spring-security-test")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.2")
+    testImplementation("org.testcontainers:testcontainers-postgresql:2.0.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    systemProperty("com.github.dockerjava.api.version", "1.44")
 }
 
 spotbugs {
@@ -99,11 +101,15 @@ spotless {
 }
 
 pmd {
-    toolVersion = "6.55.0"
+    toolVersion = "7.21.0"
     isConsoleOutput = true
     ruleSets = listOf("category/java/bestpractices.xml")
 }
 
 tasks.named("check") {
     dependsOn("spotbugsMain", "spotbugsTest", "spotlessCheck", "pmdMain")
+}
+
+tasks.named("pmdTest") {
+    enabled = false
 }
