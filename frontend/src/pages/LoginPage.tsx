@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
         setIsSubmitting(true);
         try {
             const response = await loginUser({email, password});
-            auth.login(response.token);
+            await auth.login(response.token);
             navigate('/schedule');
         } catch (err: any) {
             console.error("Login failed:", err);

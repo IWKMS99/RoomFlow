@@ -18,7 +18,7 @@ const RegisterPage: React.FC = () => {
         setIsSubmitting(true);
         try {
             const response = await registerUser({email, password});
-            auth.login(response.token);
+            await auth.login(response.token);
             navigate('/schedule');
         } catch (err: any) {
             console.error("Registration failed:", err);

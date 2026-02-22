@@ -4,3 +4,9 @@ export interface DecodedToken {
     exp: number;
     roles: string[];
 }
+
+export interface AuthUser {
+    id: string;
+    email: string;
+    roles: string[];
+}

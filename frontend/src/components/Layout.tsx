@@ -14,8 +14,8 @@ const Layout: React.FC = () => {
     const {isAuthenticated, isAdmin, user, logout, isLoading} = useAuth();
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
 
@@ -80,7 +80,7 @@ const Layout: React.FC = () => {
 
                     {isAuthenticated ? (
                         <div className={styles.userInfo}>
-                            <p className={styles.userEmail} title={user?.sub}>{user?.sub}</p>
+                            <p className={styles.userEmail} title={user?.email}>{user?.email}</p>
                             <button onClick={handleLogout} className={styles.logoutButton}>
                                 <LogoutIcon/> Выйти
                             </button>
