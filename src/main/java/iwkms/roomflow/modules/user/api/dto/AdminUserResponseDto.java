@@ -4,4 +4,14 @@ import iwkms.roomflow.modules.user.impl.domain.Role;
 import java.util.Set;
 import java.util.UUID;
 
-public record AdminUserResponseDto(UUID id, String email, Set<Role> roles) {}
+public record AdminUserResponseDto(UUID id, String email, Set<Role> roles) {
+
+    public AdminUserResponseDto {
+        roles = Set.copyOf(roles);
+    }
+
+    @Override
+    public Set<Role> roles() {
+        return Set.copyOf(roles);
+    }
+}

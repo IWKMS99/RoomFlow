@@ -2,7 +2,7 @@ package iwkms.roomflow.modules.user.impl.service;
 
 import iwkms.roomflow.config.security.JwtService;
 import iwkms.roomflow.exception.UserAlreadyExistsException;
-import iwkms.roomflow.modules.user.api.dto.AuthResponseDto;
+import iwkms.roomflow.modules.user.api.dto.CurrentUserResponseDto;
 import iwkms.roomflow.modules.user.api.dto.LoginRequestDto;
 import iwkms.roomflow.modules.user.api.dto.RegisterRequestDto;
 import iwkms.roomflow.modules.user.impl.domain.Role;
@@ -15,17 +15,20 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthResponseDto register(RegisterRequestDto request) {
+    public AuthTokens register(RegisterRequestDto request) {
         userRepository.findByEmail(request.email()).ifPresent(user -> {
             throw new UserAlreadyExistsException("User with email " + request.email() + " already exists.");
         });
@@ -38,17 +41,37 @@ public class AuthService {
                 .build();
         userRepository.save(user);
 
-        var jwtToken = jwtService.generateToken(user);
-        return new AuthResponseDto(jwtToken);
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+        return new AuthTokens(accessToken, refreshToken);
     }
 
-    public AuthResponseDto login(LoginRequestDto request) {
+    public AuthTokens login(LoginRequestDto request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
         var user = userRepository.findByEmail(request.email()).orElseThrow();
 
-        var jwtToken = jwtService.generateToken(user);
-        return new AuthResponseDto(jwtToken);
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+        return new AuthTokens(accessToken, refreshToken);
+    }
+
+    public AuthTokens refresh(String refreshToken) {
+        RefreshRotationResult rotationResult = refreshTokenService.rotate(refreshToken);
+        Set<String> roles =
+                rotationResult.roles().stream().map(Role::name).collect(java.util.stream.Collectors.toSet());
+        String accessToken = jwtService.generateAccessToken(rotationResult.userEmail(), roles);
+        return new AuthTokens(accessToken, rotationResult.refreshToken());
+    }
+
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeCurrentToken(refreshToken);
+    }
+
+    @Transactional(readOnly = true)
+    public CurrentUserResponseDto me(User user) {
+        Set<String> roles = user.getRoles().stream().map(Role::name).collect(java.util.stream.Collectors.toSet());
+        return new CurrentUserResponseDto(user.getId(), user.getEmail(), roles);
     }
 }

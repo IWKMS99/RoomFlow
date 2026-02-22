@@ -3,6 +3,8 @@ package iwkms.roomflow.app.web.exception;
 import iwkms.roomflow.app.web.exception.dto.ErrorResponseDto;
 import iwkms.roomflow.app.web.exception.dto.ValidationErrorResponseDto;
 import iwkms.roomflow.exception.BookingConflictException;
+import iwkms.roomflow.exception.InvalidRefreshTokenException;
+import iwkms.roomflow.exception.RefreshTokenExpiredException;
 import iwkms.roomflow.exception.ResourceNotFoundException;
 import iwkms.roomflow.exception.UserAlreadyExistsException;
 import java.util.List;
@@ -45,6 +47,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponseDto handleBadCredentialsException(BadCredentialsException ex) {
         return new ErrorResponseDto(HttpStatus.UNAUTHORIZED.value(), "Invalid email or password");
+    }
+
+    @ExceptionHandler({InvalidRefreshTokenException.class, RefreshTokenExpiredException.class})
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponseDto handleRefreshTokenException(RuntimeException ex) {
+        return new ErrorResponseDto(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
