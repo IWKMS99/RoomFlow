@@ -1,5 +1,6 @@
-import axios from 'axios';
+import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
 import type {BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
+import type {AuthUser} from '../types/user.ts';
 
 export interface AdminUser {
     id: string;
@@ -7,37 +8,134 @@ export interface AdminUser {
     roles: string[];
 }
 
+export interface AuthResponse {
+    token: string;
+}
+
+interface RetriableRequestConfig extends InternalAxiosRequestConfig {
+    _retry?: boolean;
+}
+
+interface QueueItem {
+    resolve: (token: string) => void;
+    reject: (error: unknown) => void;
+}
+
+interface InterceptorOptions {
+    getAccessToken: () => string | null;
+    setAccessToken: (token: string) => void;
+    onUnauthorized: () => void;
+}
+
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-apiClient.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+let isRefreshing = false;
+let failedQueue: QueueItem[] = [];
+let requestInterceptorId: number | null = null;
+let responseInterceptorId: number | null = null;
 
-export const setupInterceptors = (logout: () => void) => {
-    apiClient.interceptors.response.use(
-        (response) => response,
-        (error) => {
-            if (error.response && error.response.status === 401) {
-                console.error("Unauthorized request. Logging out.");
-                logout();
+const processQueue = (error: unknown, token: string | null) => {
+    failedQueue.forEach(({resolve, reject}) => {
+        if (error || !token) {
+            reject(error);
+            return;
+        }
+        resolve(token);
+    });
+    failedQueue = [];
+};
+
+const isRefreshRequest = (url?: string) => (url ?? '').includes('/auth/refresh');
+const isAuthBootstrapEndpoint = (url?: string) => {
+    const target = url ?? '';
+    return target.includes('/auth/login') || target.includes('/auth/register') || target.includes('/auth/refresh');
+};
+
+export const setupInterceptors = ({getAccessToken, setAccessToken, onUnauthorized}: InterceptorOptions) => {
+    if (requestInterceptorId !== null) {
+        apiClient.interceptors.request.eject(requestInterceptorId);
+    }
+    if (responseInterceptorId !== null) {
+        apiClient.interceptors.response.eject(responseInterceptorId);
+    }
+
+    requestInterceptorId = apiClient.interceptors.request.use(
+        (config) => {
+            const token = getAccessToken();
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
             }
-            return Promise.reject(error);
+            return config;
+        },
+        (error) => Promise.reject(error)
+    );
+
+    responseInterceptorId = apiClient.interceptors.response.use(
+        (response) => response,
+        async (error: AxiosError) => {
+            const originalRequest = error.config as RetriableRequestConfig | undefined;
+            const status = error.response?.status;
+
+            if (!originalRequest || status !== 401) {
+                return Promise.reject(error);
+            }
+
+            if (isRefreshRequest(originalRequest.url) || isAuthBootstrapEndpoint(originalRequest.url)) {
+                return Promise.reject(error);
+            }
+
+            if (originalRequest._retry) {
+                onUnauthorized();
+                return Promise.reject(error);
+            }
+
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({
+                        resolve: (token: string) => {
+                            originalRequest.headers.Authorization = `Bearer ${token}`;
+                            resolve(apiClient(originalRequest));
+                        },
+                        reject,
+                    });
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const refreshResponse = await refreshAccessToken();
+                setAccessToken(refreshResponse.token);
+                processQueue(null, refreshResponse.token);
+                originalRequest.headers.Authorization = `Bearer ${refreshResponse.token}`;
+                return await apiClient(originalRequest);
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                onUnauthorized();
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
     );
+
+    return () => {
+        if (requestInterceptorId !== null) {
+            apiClient.interceptors.request.eject(requestInterceptorId);
+            requestInterceptorId = null;
+        }
+        if (responseInterceptorId !== null) {
+            apiClient.interceptors.response.eject(responseInterceptorId);
+            responseInterceptorId = null;
+        }
+    };
 };
 
 export const fetchSchedule = async (date: string): Promise<ScheduleView> => {
@@ -61,15 +159,29 @@ export const cancelBooking = async (bookingId: string): Promise<void> => {
     await apiClient.delete(`/bookings/${bookingId}`);
 };
 
-export const registerUser = async (payload: any) => {
-    const response = await apiClient.post('/auth/register', payload);
+export const registerUser = async (payload: {email: string; password: string}): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/register', payload);
     return response.data;
-}
+};
 
-export const loginUser = async (payload: any) => {
-    const response = await apiClient.post('/auth/login', payload);
+export const loginUser = async (payload: {email: string; password: string}): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/login', payload);
     return response.data;
-}
+};
+
+export const refreshAccessToken = async (): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/refresh');
+    return response.data;
+};
+
+export const logoutUser = async (): Promise<void> => {
+    await apiClient.post('/auth/logout');
+};
+
+export const getCurrentUser = async (): Promise<AuthUser> => {
+    const response = await apiClient.get<AuthUser>('/auth/me');
+    return response.data;
+};
 
 export const getAdminUsers = async (): Promise<AdminUser[]> => {
     const response = await apiClient.get<AdminUser[]>('/admin/users');
