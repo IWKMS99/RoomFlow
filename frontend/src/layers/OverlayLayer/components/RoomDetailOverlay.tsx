@@ -133,7 +133,7 @@ const RoomDetailOverlay = () => {
       <motion.div
         layoutId={`room-card-${roomId}`}
         transition={{type: 'spring', stiffness: 280, damping: 24}}
-        className="rf-modal relative flex max-h-[calc(100dvh-8.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl p-3 sm:p-5 lg:p-6"
+        className="rf-modal relative flex max-h-[calc(100dvh-8.5rem)] w-full max-w-6xl flex-col overflow-y-auto overflow-x-hidden rounded-3xl p-3 sm:p-5 lg:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <motion.div
@@ -200,7 +200,7 @@ const RoomDetailOverlay = () => {
                     {isDesktop ? 'Тяните курсор по слотам для выбора диапазона' : 'Выберите старт и конец встречи'}
                   </span>
                 </div>
-                <div className="min-h-0 max-h-[50dvh] overflow-y-auto overflow-x-hidden pr-1 rf-scrollbar sm:max-h-[54dvh] lg:max-h-[58dvh]">
+                <div className="min-h-0 max-h-[38dvh] overflow-y-auto overflow-x-hidden pr-1 rf-scrollbar sm:max-h-[54dvh] lg:max-h-[58dvh]">
                   {isDesktop ? (
                     <ScheduleTimelineDesktop
                       compact
