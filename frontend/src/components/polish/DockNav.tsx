@@ -27,7 +27,7 @@ interface Props {
 }
 
 const itemBase =
-  'group relative inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition sm:px-4';
+  'group relative inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_hsl(var(--primary)/0.62),0_0_0_4px_hsl(var(--primary)/0.16)] sm:px-4';
 const accountPanelLayoutId = 'dock-account-panel';
 
 const DockItemButton = ({
@@ -211,7 +211,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
                   layoutId={accountPanelLayoutId}
                   transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
                   aria-hidden="true"
-                  className="absolute inset-0 rounded-full border border-primary/40 bg-primary/16"
+                  className="absolute inset-[1px] rounded-full bg-primary/14"
                 />
               )}
               <UserCircle2 size={15} />
