@@ -1,4 +1,4 @@
-FROM eclipse-temurin:24-jdk as builder
+FROM eclipse-temurin:24-jdk AS builder
 WORKDIR /app
 COPY gradlew .
 COPY gradle gradle
