@@ -30,6 +30,7 @@ const RoomDetailOverlay = () => {
 
   const schedule = useScheduleQuery(parseDateKey(selectedDateKey));
   const [selectedRange, setSelectedRange] = React.useState<DirectSelectionRange | null>(null);
+  const [nowTs, setNowTs] = React.useState(Date.now());
 
   const roomId = activeRoomId ?? params.roomId ?? null;
 
@@ -62,6 +63,13 @@ const RoomDetailOverlay = () => {
       useHubStore.getState().enterRoom(roomId);
     }
   }, [activeRoomId, roomId]);
+
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      setNowTs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   React.useEffect(() => {
     if (!roomId || schedule.isLoading || schedule.isError) {
@@ -172,6 +180,9 @@ const RoomDetailOverlay = () => {
               className="grid gap-4"
             >
               <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
+                <p className="mb-2 mt-0 text-xs text-muted-foreground">
+                  Обновлено: {Math.max(0, Math.floor((nowTs - schedule.dataUpdatedAt) / 1000))} сек назад
+                </p>
                 {isDesktop ? (
                   <ScheduleTimelineDesktop
                     compact

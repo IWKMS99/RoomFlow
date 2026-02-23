@@ -1,6 +1,7 @@
 import {motion, useReducedMotion} from 'framer-motion';
 import {useNavigate} from 'react-router-dom';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 import {useHubStore} from '../../../store/useHubStore';
 import {useAuth} from '../../../context/useAuth';
 import {normalizeDate, formatDateForApi} from '../../../lib/datetime/dateKey';
@@ -12,8 +13,10 @@ import {motionPreset} from '../../../lib/motion';
 import {motionTokens} from '../../../lib/motionTokens';
 
 const MyBookingsOverlay = () => {
+  const {i18n} = useTranslation();
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
+  const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
   const {isAuthenticated} = useAuth();
   const selectedDateKey = useHubStore((state) => state.selectedDateKey) || formatDateForApi(normalizeDate(new Date()));
   const cameraPose = useHubStore((state) => state.cameraPose);
@@ -81,8 +84,8 @@ const MyBookingsOverlay = () => {
                 >
                   <p className="m-0 text-lg font-semibold text-foreground">{booking.roomName}</p>
                   <p className="m-0 mt-1 text-sm text-muted-foreground">
-                    {new Date(booking.startTime).toLocaleDateString('ru-RU')} •{' '}
-                    {new Date(booking.startTime).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
+                    {new Date(booking.startTime).toLocaleDateString(locale)} •{' '}
+                    {new Date(booking.startTime).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}
                   </p>
                   <p className="m-0 mt-2 text-xs text-muted-foreground">Статус: {booking.status}</p>
 

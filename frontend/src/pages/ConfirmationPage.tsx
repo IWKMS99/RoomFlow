@@ -1,26 +1,29 @@
 import React, {useEffect} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {CalendarCheck2} from 'lucide-react';
+import {useTranslation} from 'react-i18next';
 import type {BookingResponse} from '../types/booking';
 import NeonButton from '../components/ui/NeonButton';
 import GlassCard from '../components/polish/GlassCard';
 
-const formatConfirmationDate = (isoString: string): string =>
-  new Date(isoString).toLocaleDateString('ru-RU', {
+const formatConfirmationDate = (isoString: string, locale: string): string =>
+  new Date(isoString).toLocaleDateString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   });
 
-const formatConfirmationTime = (startIso: string, endIso: string): string => {
-  const startTime = new Date(startIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
-  const endTime = new Date(endIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+const formatConfirmationTime = (startIso: string, endIso: string, locale: string): string => {
+  const startTime = new Date(startIso).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
+  const endTime = new Date(endIso).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
   return `${startTime} - ${endTime}`;
 };
 
 const ConfirmationPage: React.FC = () => {
+  const {i18n} = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
 
   const state = location.state as {bookingDetails: BookingResponse; roomName: string} | null;
 
@@ -54,12 +57,12 @@ const ConfirmationPage: React.FC = () => {
           </p>
           <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
             <span>Дата</span>
-            <strong className="text-foreground">{formatConfirmationDate(bookingDetails.startTime)}</strong>
+            <strong className="text-foreground">{formatConfirmationDate(bookingDetails.startTime, locale)}</strong>
           </p>
           <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
             <span>Время</span>
             <strong className="rf-tabular text-foreground">
-              {formatConfirmationTime(bookingDetails.startTime, bookingDetails.endTime)}
+              {formatConfirmationTime(bookingDetails.startTime, bookingDetails.endTime, locale)}
             </strong>
           </p>
         </div>

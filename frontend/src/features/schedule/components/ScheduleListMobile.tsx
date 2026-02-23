@@ -120,6 +120,11 @@ const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectio
       <p className="m-0 text-xs text-muted-foreground">
         Выберите начало и конец встречи в нужной комнате.
       </p>
+      {draft && (
+        <p className="m-0 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs text-primary">
+          Начало диапазона выбрано. Нажмите конечный слот в этой же комнате.
+        </p>
+      )}
 
       {rows.map((row) => (
         <article key={row.roomId} className="rounded-2xl border border-white/16 bg-card/62 p-3 shadow-soft">
@@ -134,6 +139,17 @@ const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectio
               const isAvailable = Boolean(cell && cell.isAvailable && !cell.isPast);
               const isDraft = draft?.roomId === row.roomId && draft.slotIndex === index;
               const selected = isCellSelected(row.roomId, index);
+              const selectedPrev = isCellSelected(row.roomId, index - 1);
+              const selectedNext = isCellSelected(row.roomId, index + 1);
+              const selectedShapeClass = selected
+                ? selectedPrev && selectedNext
+                  ? 'rounded-none border-x-0'
+                  : selectedPrev
+                    ? 'rounded-l-none'
+                    : selectedNext
+                      ? 'rounded-r-none'
+                      : ''
+                : '';
 
               return (
                 <button
@@ -160,7 +176,7 @@ const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectio
                     onSelectionCommit(range, event.currentTarget.getBoundingClientRect());
                     setDraft(null);
                   }}
-                  className={`rounded-lg border px-2 py-2 text-left transition ${
+                  className={`rounded-lg border px-2 py-2 text-left transition ${selectedShapeClass} ${
                     selected
                       ? 'border-primary bg-primary/30 text-primary-foreground shadow-[0_10px_18px_-14px_hsl(var(--primary)/0.9)]'
                       : isDraft

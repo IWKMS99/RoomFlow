@@ -1,11 +1,13 @@
 import type React from 'react';
 import {motion, useMotionValue, useReducedMotion, useSpring, useTransform} from 'framer-motion';
-import {BookMarked, CalendarDays, LogIn, LogOut, Shield, UserCircle2} from 'lucide-react';
+import {BookMarked, CalendarDays, Languages, LogIn, LogOut, MoonStar, Shield, Sun, UserCircle2} from 'lucide-react';
 import {NavLink, useNavigate} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {cn} from '../../lib/utils';
 import {motionPreset} from '../../lib/motion';
 import {useMediaQuery} from '../../hooks/useMediaQuery';
 import MagneticButton from '../motion/MagneticButton';
+import type {ThemeMode} from '../../hooks/useTheme';
 
 interface DockItem {
   to: string;
@@ -18,6 +20,8 @@ interface Props {
   isAdmin: boolean;
   userEmail?: string;
   onLogout: () => Promise<void>;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
   onRouteHover?: (route: string) => void;
 }
 
@@ -83,14 +87,15 @@ const DockItemButton = ({
   );
 };
 
-const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, onRouteHover}: Props) => {
+const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggleTheme, onRouteHover}: Props) => {
   const reducedMotion = useReducedMotion();
   const navigate = useNavigate();
+  const {t, i18n} = useTranslation();
 
   const items: DockItem[] = [
-    {to: '/schedule', label: 'Расписание', icon: CalendarDays},
-    ...(isAuthenticated ? [{to: '/my-bookings', label: 'Мои брони', icon: BookMarked}] : []),
-    ...(isAdmin ? [{to: '/admin', label: 'Админ', icon: Shield}] : []),
+    {to: '/schedule', label: t('nav.schedule'), icon: CalendarDays},
+    ...(isAuthenticated ? [{to: '/my-bookings', label: t('nav.myBookings'), icon: BookMarked}] : []),
+    ...(isAdmin ? [{to: '/admin', label: t('nav.admin'), icon: Shield}] : []),
   ];
 
   return (
@@ -105,6 +110,26 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, onRouteHover}: 
         {items.map((item) => (
           <DockItemButton key={item.to} item={item} onRouteHover={onRouteHover} />
         ))}
+        <MagneticButton
+          onClick={() => {
+            void i18n.changeLanguage(i18n.language === 'ru' ? 'en' : 'ru');
+          }}
+          title={t('nav.lang')}
+          className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
+          aria-label={t('nav.lang')}
+        >
+          <Languages size={15} />
+          <span className="hidden md:inline">{i18n.language === 'ru' ? 'RU' : 'EN'}</span>
+        </MagneticButton>
+        <MagneticButton
+          onClick={onToggleTheme}
+          title={t('nav.theme')}
+          className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
+          aria-label={t('nav.theme')}
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <MoonStar size={15} />}
+          <span className="hidden md:inline">{theme === 'dark' ? t('nav.themeLight') : t('nav.themeDark')}</span>
+        </MagneticButton>
 
         {isAuthenticated ? (
           <>
@@ -114,12 +139,12 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, onRouteHover}: 
               className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
             >
               <UserCircle2 size={15} />
-              <span className="hidden max-w-[140px] truncate md:inline">{userEmail ?? 'Профиль'}</span>
+              <span className="hidden max-w-[140px] truncate md:inline">{userEmail ?? t('nav.profile')}</span>
             </MagneticButton>
             <MagneticButton
               onClick={() => void onLogout()}
               className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-danger/35 hover:bg-danger/14 hover:text-danger')}
-              aria-label="Выйти"
+              aria-label={t('nav.logoutAria')}
             >
               <LogOut size={15} />
             </MagneticButton>
@@ -130,7 +155,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, onRouteHover}: 
             className={cn(itemBase, 'border-primary/42 bg-primary/22 text-foreground hover:bg-primary/32')}
           >
             <LogIn size={15} />
-            <span className="hidden md:inline">Войти</span>
+            <span className="hidden md:inline">{t('nav.login')}</span>
           </MagneticButton>
         )}
       </div>

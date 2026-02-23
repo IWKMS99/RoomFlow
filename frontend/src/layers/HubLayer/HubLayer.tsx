@@ -1,7 +1,10 @@
 import React from 'react';
 import {motion} from 'framer-motion';
 import {useNavigate} from 'react-router-dom';
-import {formatDateForApi, normalizeDate, parseDateKey} from '../../lib/datetime/dateKey';
+import {DayPicker} from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
+import {useTranslation} from 'react-i18next';
+import {formatDateForApi, formatDateForDisplay, normalizeDate, parseDateKey} from '../../lib/datetime/dateKey';
 import {useHubStore} from '../../store/useHubStore';
 import {useScheduleQuery} from '../../services/hooks/useScheduleQuery';
 import type {ScheduleRoomVm} from '../../features/schedule/lib/scheduleViewModel';
@@ -12,10 +15,12 @@ interface RoomSummary extends Omit<ScheduleRoomVm, 'isPast' | 'isAvailable'> {
 }
 
 const HubLayer = () => {
+  const {t, i18n} = useTranslation();
   const navigate = useNavigate();
   const selectedDateKey = useHubStore((state) => state.selectedDateKey) || formatDateForApi(normalizeDate(new Date()));
   const setSelectedDateKey = useHubStore((state) => state.setSelectedDateKey);
   const selectedDate = parseDateKey(selectedDateKey);
+  const [calendarOpen, setCalendarOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!useHubStore.getState().selectedDateKey) {
@@ -56,18 +61,39 @@ const HubLayer = () => {
     <div className="h-full w-full overflow-y-auto p-6 md:p-12">
       <div className="mx-auto mb-10 flex max-w-7xl flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-white md:text-5xl">Бронирование</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Выберите переговорную комнату</p>
+          <h1 className="text-4xl font-bold tracking-tight text-white md:text-5xl">{t('hub.title')}</h1>
+          <p className="mt-2 text-lg text-muted-foreground">{t('hub.subtitle')}</p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg bg-white/5 p-1 backdrop-blur-md">
-          <button className="rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-sm">Сегодня</button>
-          <button className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white">Завтра</button>
+        <div className="relative flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCalendarOpen((current) => !current)}
+            className="rounded-lg border border-white/14 bg-white/8 px-4 py-2 text-sm font-medium text-white shadow-sm backdrop-blur-md"
+          >
+            {formatDateForDisplay(selectedDate, i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
+          </button>
+
+          {calendarOpen && (
+            <div className="absolute right-0 top-12 z-30 rounded-xl border border-white/14 bg-card/95 p-3 shadow-2xl backdrop-blur-md">
+              <DayPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (!date) return;
+                  setSelectedDateKey(formatDateForApi(normalizeDate(date)));
+                  setCalendarOpen(false);
+                }}
+                disabled={{before: normalizeDate(new Date())}}
+                className="text-foreground"
+              />
+            </div>
+          )}
         </div>
       </div>
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {isLoading && <div className="text-white">Загрузка расписания...</div>}
+        {isLoading && <div className="text-white">{t('hub.loading')}</div>}
 
         {!isLoading && rooms.map((room) => (
           <motion.div
