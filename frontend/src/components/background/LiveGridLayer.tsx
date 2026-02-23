@@ -236,7 +236,18 @@ const LiveGridLayer = ({theme}: Props) => {
     '--rf-grid-tilt-y': field.tiltY.toFixed(3),
   } as React.CSSProperties;
 
-  if (!field.enabled) return null;
+  if (!field.enabled) {
+    return (
+      <div
+        aria-hidden="true"
+        className={cn(
+          'pointer-events-none absolute inset-0 rf-stage-grid',
+          theme === 'light' ? 'rf-stage-grid--light' : 'rf-stage-grid--dark'
+        )}
+        style={{backgroundSize: `${SPACING}px ${SPACING}px`}}
+      />
+    );
+  }
 
   return (
     <div
