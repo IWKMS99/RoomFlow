@@ -30,7 +30,7 @@ public class BookingManagementService {
 
     public Booking bookRoom(BookRoomDto command) {
         Room room = roomRepository
-                .findById(command.roomId())
+                .findByIdAndActiveTrue(command.roomId())
                 .orElseThrow(() -> new ResourceNotFoundException("Room with id " + command.roomId() + " not found"));
 
         List<Booking> conflictingBookings =
