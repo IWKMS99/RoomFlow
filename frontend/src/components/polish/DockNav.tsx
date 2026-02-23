@@ -1,5 +1,6 @@
+import {useEffect, useRef, useState} from 'react';
 import type React from 'react';
-import {motion, useMotionValue, useReducedMotion, useSpring, useTransform} from 'framer-motion';
+import {AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform} from 'framer-motion';
 import {BookMarked, CalendarDays, Languages, LogIn, LogOut, MoonStar, Shield, Sun, UserCircle2} from 'lucide-react';
 import {NavLink, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
@@ -27,6 +28,7 @@ interface Props {
 
 const itemBase =
   'group relative inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition sm:px-4';
+const accountPanelLayoutId = 'dock-account-panel';
 
 const DockItemButton = ({
   item,
@@ -89,14 +91,74 @@ const DockItemButton = ({
 
 const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggleTheme, onRouteHover}: Props) => {
   const reducedMotion = useReducedMotion();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const navigate = useNavigate();
   const {t, i18n} = useTranslation();
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [accountMenuAnchor, setAccountMenuAnchor] = useState<{right: number; bottom: number} | null>(null);
+  const accountTriggerRef = useRef<HTMLDivElement | null>(null);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   const items: DockItem[] = [
     {to: '/schedule', label: t('nav.schedule'), icon: CalendarDays},
     ...(isAuthenticated ? [{to: '/my-bookings', label: t('nav.myBookings'), icon: BookMarked}] : []),
     ...(isAdmin ? [{to: '/admin', label: t('nav.admin'), icon: Shield}] : []),
   ];
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        !accountTriggerRef.current?.contains(target) &&
+        !accountMenuRef.current?.contains(target)
+      ) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAccountMenuOpen]);
+
+  useEffect(() => {
+    if (!isAccountMenuOpen || !isDesktop) {
+      return;
+    }
+
+    const updateAnchor = () => {
+      if (!accountTriggerRef.current) {
+        return;
+      }
+      const rect = accountTriggerRef.current.getBoundingClientRect();
+      setAccountMenuAnchor({
+        right: Math.max(12, window.innerWidth - rect.right),
+        bottom: Math.max(12, window.innerHeight - rect.top + 8),
+      });
+    };
+
+    updateAnchor();
+    window.addEventListener('resize', updateAnchor);
+    window.addEventListener('scroll', updateAnchor, true);
+    return () => {
+      window.removeEventListener('resize', updateAnchor);
+      window.removeEventListener('scroll', updateAnchor, true);
+    };
+  }, [isAccountMenuOpen, isDesktop]);
 
   return (
     <motion.nav
@@ -106,7 +168,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
       className="pointer-events-auto fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 px-3"
       aria-label="Основная навигация"
     >
-      <div className="mx-auto flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/20 bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))] p-1.5 shadow-glow backdrop-blur-2xl rf-scrollbar">
+      <div className="mx-auto flex w-fit max-w-full items-center gap-1 overflow-x-auto overflow-y-visible rounded-full border border-white/20 bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))] p-1.5 shadow-glow backdrop-blur-2xl rf-scrollbar">
         {items.map((item) => (
           <DockItemButton key={item.to} item={item} onRouteHover={onRouteHover} />
         ))}
@@ -132,23 +194,30 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
         </MagneticButton>
 
         {isAuthenticated ? (
-          <>
+          <div ref={accountTriggerRef} className="relative">
             <MagneticButton
-              onClick={() => navigate('/my-bookings')}
+              onClick={() => setIsAccountMenuOpen((open) => !open)}
               title={userEmail}
-              className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
+              aria-label={t('nav.profile')}
+              className={cn(
+                itemBase + ' overflow-hidden',
+                isAccountMenuOpen
+                  ? 'border-primary/45 text-foreground'
+                  : 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground'
+              )}
             >
+              {!isAccountMenuOpen && (
+                <motion.span
+                  layoutId={accountPanelLayoutId}
+                  transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-full border border-primary/40 bg-primary/16"
+                />
+              )}
               <UserCircle2 size={15} />
               <span className="hidden max-w-[140px] truncate md:inline">{userEmail ?? t('nav.profile')}</span>
             </MagneticButton>
-            <MagneticButton
-              onClick={() => void onLogout()}
-              className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-danger/35 hover:bg-danger/14 hover:text-danger')}
-              aria-label={t('nav.logoutAria')}
-            >
-              <LogOut size={15} />
-            </MagneticButton>
-          </>
+          </div>
         ) : (
           <MagneticButton
             onClick={() => navigate('/login')}
@@ -159,6 +228,90 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
           </MagneticButton>
         )}
       </div>
+
+      <AnimatePresence>
+        {isAuthenticated && isAccountMenuOpen && (
+          <motion.div
+            ref={accountMenuRef}
+            initial={reducedMotion ? false : {opacity: 0, scale: 0.92, y: 10}}
+            animate={reducedMotion ? undefined : {opacity: 1, scale: 1, y: 0}}
+            exit={reducedMotion ? undefined : {opacity: 0, scale: 0.96, y: 8}}
+            transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
+            className={cn(
+              'z-[70] min-w-[220px] p-2',
+              isDesktop && accountMenuAnchor
+                ? 'fixed'
+                : 'absolute bottom-full right-3 mb-2 rounded-2xl border border-white/20 bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))] shadow-glow backdrop-blur-2xl'
+            )}
+            style={
+              isDesktop && accountMenuAnchor
+                ? {
+                    right: `${accountMenuAnchor.right}px`,
+                    bottom: `${accountMenuAnchor.bottom}px`,
+                    transformOrigin: 'bottom right',
+                  }
+                : undefined
+            }
+          >
+            <motion.div
+              layoutId={accountPanelLayoutId}
+              transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
+              className="absolute inset-0 rounded-2xl border border-white/20 bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))] shadow-glow backdrop-blur-2xl"
+            />
+            <motion.span
+              aria-hidden="true"
+              initial={reducedMotion ? false : {opacity: 0, scaleY: 0.35, y: 3}}
+              animate={reducedMotion ? undefined : {opacity: 1, scaleY: 1, y: 0}}
+              exit={reducedMotion ? undefined : {opacity: 0, scaleY: 0.35, y: 3}}
+              transition={reducedMotion ? motionPreset.quick : motionPreset.standard}
+              className={cn(
+                'pointer-events-none absolute -bottom-3 right-5 h-4 w-14 origin-top rounded-b-2xl border-x border-b border-white/18 bg-[linear-gradient(180deg,hsl(var(--surface-glass-2))_0%,hsl(var(--surface-glass-1)/0.58)_100%)]',
+                isDesktop && 'hidden'
+              )}
+            />
+            <div className="relative px-2 pb-2 pt-1">
+              <p className="m-0 text-xs text-muted-foreground">{t('nav.profile')}</p>
+              <p className="m-0 mt-1 truncate text-sm font-semibold text-foreground">{userEmail}</p>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">{isAdmin ? t('nav.roleAdmin') : t('nav.roleUser')}</p>
+            </div>
+            <button
+              type="button"
+              className="relative flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+              onClick={() => {
+                setIsAccountMenuOpen(false);
+                navigate('/my-bookings');
+              }}
+            >
+              <BookMarked size={14} className="mr-2" />
+              {t('nav.myBookings')}
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                className="relative mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+                onClick={() => {
+                  setIsAccountMenuOpen(false);
+                  navigate('/admin');
+                }}
+              >
+                <Shield size={14} className="mr-2" />
+                {t('nav.admin')}
+              </button>
+            )}
+            <button
+              type="button"
+              className="relative mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-danger/14 hover:text-danger"
+              onClick={() => {
+                setIsAccountMenuOpen(false);
+                void onLogout();
+              }}
+            >
+              <LogOut size={14} className="mr-2" />
+              {t('nav.logoutAria')}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 };

@@ -9,6 +9,8 @@
   "nav.theme": "Тема",
   "nav.themeLight": "Светлая",
   "nav.themeDark": "Темная",
+  "nav.roleAdmin": "Роль: администратор",
+  "nav.roleUser": "Роль: пользователь",
   "hub.title": "Бронирование",
   "hub.subtitle": "Выберите переговорную комнату",
   "hub.loading": "Загрузка расписания...",

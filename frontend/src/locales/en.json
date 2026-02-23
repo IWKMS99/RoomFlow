@@ -9,6 +9,8 @@
   "nav.theme": "Theme",
   "nav.themeLight": "Light",
   "nav.themeDark": "Dark",
+  "nav.roleAdmin": "Role: admin",
+  "nav.roleUser": "Role: member",
   "hub.title": "Booking",
   "hub.subtitle": "Choose a meeting room",
   "hub.loading": "Loading schedule...",

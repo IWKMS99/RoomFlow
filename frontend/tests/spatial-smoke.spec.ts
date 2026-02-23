@@ -84,6 +84,20 @@ test('register form validates password mismatch on client', async ({page}) => {
   await expect(page.getByText('Пароли не совпадают.')).toBeVisible();
 });
 
+test('authenticated user is redirected away from auth pages', async ({page}) => {
+  await page.addInitScript((token) => {
+    window.localStorage.setItem('authToken', token);
+  }, createJwt(['ROLE_USER']));
+
+  await mockAuthMe(page, ['ROLE_USER']);
+
+  await page.goto('/login');
+  await expect(page).toHaveURL('/schedule');
+
+  await page.goto('/register');
+  await expect(page).toHaveURL('/schedule');
+});
+
 test('route /schedule/room/:id opens room detail flow and can return', async ({page}) => {
   await page.goto('/schedule/room/room-a');
   await expect(page).toHaveURL(/\/schedule\/room\/room-a/);
@@ -124,6 +138,26 @@ test('my-bookings deep-link renders overlay in scene runtime', async ({page}) =>
   await expect(page).toHaveURL('/my-bookings');
   await expect(page.getByRole('heading', {name: 'Мои бронирования'})).toBeVisible();
   await expect(page.getByText('fallback-режиме')).not.toBeVisible();
+});
+
+test('profile button opens account menu in dock', async ({page}) => {
+  await page.addInitScript((token) => {
+    window.localStorage.setItem('authToken', token);
+  }, createJwt(['ROLE_USER']));
+
+  await mockAuthMe(page, ['ROLE_USER']);
+  await page.route('**/api/v1/my-bookings', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
+  await page.goto('/schedule');
+  await page.getByRole('button', {name: 'Профиль'}).click();
+  await expect(page.getByText('Роль: пользователь')).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Выйти'})).toBeVisible();
 });
 
 test('admin deep-link renders overlay for admin user', async ({page}) => {
