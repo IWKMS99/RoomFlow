@@ -9,12 +9,16 @@ import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
 import iwkms.roomflow.modules.booking.impl.domain.Room;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
 import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
+import iwkms.roomflow.modules.integration.holiday.dto.HolidayDto;
+import iwkms.roomflow.modules.integration.holiday.service.HolidayService;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,13 +26,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class BookingManagementService {
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final HolidayService holidayService;
 
     public Booking bookRoom(BookRoomDto command) {
+        LocalDate bookingDate = command.startTime().toLocalDate();
+        if (isPublicHoliday(bookingDate)) {
+            throw new BookingConflictException("Booking is unavailable on public holidays.");
+        }
+
         Room room = roomRepository
                 .findByIdAndActiveTrue(command.roomId())
                 .orElseThrow(() -> new ResourceNotFoundException("Room with id " + command.roomId() + " not found"));
@@ -72,5 +83,19 @@ public class BookingManagementService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+    }
+
+    private boolean isPublicHoliday(LocalDate date) {
+        try {
+            List<HolidayDto> holidays = holidayService.getHolidays(date.getYear(), "RU");
+            return holidays.stream().anyMatch(holiday -> holiday.date().equals(date));
+        } catch (RuntimeException ex) {
+            log.warn(
+                    "Holiday API unavailable, skipping holiday restriction for date={}, reason={}: {}",
+                    date,
+                    ex.getClass().getSimpleName(),
+                    ex.getMessage());
+            return false;
+        }
     }
 }
