@@ -152,9 +152,7 @@ class AdminControllerIT {
                 .build();
         bookingRepository.saveAndFlush(booking);
 
-        mockMvc.perform(get("/api/v1/admin/bookings")
-                        .with(user(adminUser))
-                        .param("date", targetDate.toString()))
+        mockMvc.perform(get("/api/v1/admin/bookings").with(user(adminUser)).param("date", targetDate.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id", is(booking.getId().toString())))
@@ -164,7 +162,12 @@ class AdminControllerIT {
     @Test
     @DisplayName("DELETE /admin/bookings/{id}: админ может отменять чужие бронирования")
     void shouldAllowAdminCancelAnyBookingFromAdminEndpoint() throws Exception {
-        LocalDateTime start = LocalDateTime.now().plusDays(2).withHour(11).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime start = LocalDateTime.now()
+                .plusDays(2)
+                .withHour(11)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
         Booking booking = Booking.builder()
                 .id(UUID.randomUUID())
                 .room(roomA)
@@ -175,7 +178,8 @@ class AdminControllerIT {
                 .build();
         bookingRepository.saveAndFlush(booking);
 
-        mockMvc.perform(delete("/api/v1/admin/bookings/{bookingId}", booking.getId()).with(user(adminUser)))
+        mockMvc.perform(delete("/api/v1/admin/bookings/{bookingId}", booking.getId())
+                        .with(user(adminUser)))
                 .andExpect(status().isNoContent());
 
         Booking updated = bookingRepository.findById(booking.getId()).orElseThrow();

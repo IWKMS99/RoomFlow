@@ -4,6 +4,7 @@ import iwkms.roomflow.modules.booking.api.dto.AdminBookingResponseDto;
 import iwkms.roomflow.modules.booking.impl.domain.Booking;
 import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
+import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,11 +30,11 @@ public class AdminBookingService {
         LocalDateTime endOfDay = startOfDay.plusDays(1);
         List<Booking> bookings = bookingRepository.findAdminBookings(startOfDay, endOfDay, roomId, status);
 
-        Map<UUID, String> userEmailById = userRepository.findAllById(bookings.stream()
-                        .map(Booking::getUserId)
-                        .collect(Collectors.toSet()))
-                .stream()
-                .collect(Collectors.toMap(user -> user.getId(), user -> user.getEmail()));
+        Map<UUID, String> userEmailById =
+                userRepository
+                        .findAllById(bookings.stream().map(Booking::getUserId).collect(Collectors.toSet()))
+                        .stream()
+                        .collect(Collectors.toMap(User::getId, User::getEmail));
 
         String normalizedUserEmail = userEmail == null ? null : userEmail.trim().toLowerCase();
 
