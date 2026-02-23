@@ -7,6 +7,7 @@ import {formatDateForApi} from '../../lib/datetime/dateKey';
 
 export const SCHEDULE_STALE_TIME = 30_000;
 export const SCHEDULE_GC_TIME = 10 * 60_000;
+export const SCHEDULE_REFETCH_INTERVAL = 10_000;
 
 export const useScheduleQuery = (selectedDate: Date) => {
   const dateKey = formatDateForApi(selectedDate);
@@ -16,6 +17,8 @@ export const useScheduleQuery = (selectedDate: Date) => {
     queryFn: () => fetchSchedule(dateKey),
     staleTime: SCHEDULE_STALE_TIME,
     gcTime: SCHEDULE_GC_TIME,
+    refetchInterval: SCHEDULE_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 
   const model = useMemo(() => createScheduleViewModel(query.data ?? null, selectedDate), [query.data, selectedDate]);
