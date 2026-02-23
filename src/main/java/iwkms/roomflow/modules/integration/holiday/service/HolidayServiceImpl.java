@@ -53,7 +53,8 @@ public class HolidayServiceImpl implements HolidayService {
 
     @SuppressWarnings("unused")
     private List<HolidayDto> fetchHolidaysFallback(int year, String country, Throwable throwable) {
-        String reason = throwable == null ? "unknown" : throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
+        String reason =
+                throwable == null ? "unknown" : throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
         log.warn("Holiday API fallback for year={}, country={}, reason={}", year, country, reason);
         return Collections.emptyList();
     }
