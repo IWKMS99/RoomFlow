@@ -18,6 +18,7 @@ export interface RoomInSchedule {
     capacity: number;
     floor: number;
     isAvailable: boolean;
+    coverImageUrl?: string | null;
 }
 
 export interface TimeSlot {
