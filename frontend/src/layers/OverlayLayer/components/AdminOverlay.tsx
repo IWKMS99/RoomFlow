@@ -77,7 +77,7 @@ const AdminOverlay = () => {
 
   return (
     <motion.div
-      className="pointer-events-auto absolute inset-0 z-40 flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
+      className="pointer-events-auto absolute inset-0 z-overlay flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
       initial={reducedMotion ? false : {opacity: 0}}
       animate={reducedMotion ? undefined : {opacity: 1, y: cameraPose === 'admin' ? 0 : -12}}
       exit={reducedMotion ? undefined : {opacity: 0}}

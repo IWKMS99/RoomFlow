@@ -59,7 +59,7 @@ const LagCursor = () => {
       style={{x: springX, y: springY}}
       animate={{opacity: visible ? 1 : 0, scale: mode === 'default' ? 1 : 1.2}}
       transition={{type: 'spring', stiffness: 260, damping: 22}}
-      className="pointer-events-none fixed left-0 top-0 z-[120] flex h-8 w-8 items-center justify-center rounded-full border border-primary/45 bg-primary/18 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground backdrop-blur"
+      className="pointer-events-none fixed left-0 top-0 z-cursor flex h-8 w-8 items-center justify-center rounded-full border border-primary/45 bg-primary/18 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground backdrop-blur"
       aria-hidden
     >
       {modeToLabel[mode]}

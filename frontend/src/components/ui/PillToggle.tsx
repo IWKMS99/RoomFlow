@@ -35,7 +35,7 @@ const PillToggle = ({active = false, groupId, itemId, className, type = 'button'
         />
       )}
       {active && !sharedLayoutId && <span aria-hidden="true" className="absolute inset-0 bg-primary/28" />}
-      <span className="relative z-[1] inline-flex items-center gap-1">{children}</span>
+      <span className="relative z-base inline-flex items-center gap-1">{children}</span>
     </button>
   );
 };

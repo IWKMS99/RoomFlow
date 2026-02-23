@@ -56,6 +56,16 @@ const HubLayer = () => {
 
     return Array.from(roomMap.values());
   }, [model]);
+  const lastNonEmptyRoomsRef = React.useRef<RoomSummary[]>([]);
+
+  React.useEffect(() => {
+    if (rooms.length > 0) {
+      lastNonEmptyRoomsRef.current = rooms;
+    }
+  }, [rooms]);
+
+  const visibleRooms = rooms.length > 0 ? rooms : lastNonEmptyRoomsRef.current;
+  const isInitialLoading = isLoading && visibleRooms.length === 0;
 
   return (
     <div className="h-full w-full overflow-y-auto p-6 md:p-12">
@@ -75,7 +85,7 @@ const HubLayer = () => {
           </button>
 
           {calendarOpen && (
-            <div className="absolute right-0 top-12 z-30 rounded-xl border border-white/14 bg-card/95 p-3 shadow-2xl backdrop-blur-md">
+            <div className="absolute right-0 top-12 z-popover rounded-xl border border-white/14 bg-card/95 p-3 shadow-2xl backdrop-blur-md">
               <DayPicker
                 mode="single"
                 selected={selectedDate}
@@ -93,9 +103,9 @@ const HubLayer = () => {
       </div>
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {isLoading && <div className="text-foreground">{t('hub.loading')}</div>}
+        {isInitialLoading && <div className="text-foreground">{t('hub.loading')}</div>}
 
-        {!isLoading && rooms.map((room) => (
+        {!isInitialLoading && visibleRooms.map((room) => (
           <motion.div
             key={room.roomId}
             layoutId={`room-card-${room.roomId}`}
@@ -134,7 +144,7 @@ const HubLayer = () => {
               <span className={`rf-tabular ${room.availableSlots > 0 ? 'text-emerald-400' : 'text-red-400'}`}>{room.availableSlots} слотов</span>
             </div>
 
-            <div className="absolute -inset-px -z-10 rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <div className="absolute -inset-px -z-decor rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
           </motion.div>
         ))}
       </div>

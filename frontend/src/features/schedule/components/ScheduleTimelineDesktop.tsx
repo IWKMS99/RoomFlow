@@ -249,7 +249,7 @@ const ScheduleTimelineDesktop = ({
       >
         <div style={{minWidth: `${minGridWidth}px`}}>
           <div className="grid" style={{gridTemplateColumns: columns}}>
-            <div className="sticky left-0 z-20 border-b border-r border-white/14 bg-card/85 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground backdrop-blur">
+            <div className="sticky left-0 z-sticky border-b border-r border-white/14 bg-card/85 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground backdrop-blur">
               Переговорки
             </div>
 
@@ -273,7 +273,7 @@ const ScheduleTimelineDesktop = ({
 
               return (
                 <div key={row.roomId} className="contents">
-                  <div className="sticky left-0 z-10 border-b border-r border-white/14 bg-card/92 px-4 py-3 backdrop-blur">
+                  <div className="sticky left-0 z-content border-b border-r border-white/14 bg-card/92 px-4 py-3 backdrop-blur">
                     <p className="m-0 text-sm font-semibold text-foreground">{row.roomName}</p>
                     <p className="rf-tabular m-0 text-xs text-muted-foreground">
                       {row.capacity} мест • Этаж {row.floor}
@@ -286,7 +286,7 @@ const ScheduleTimelineDesktop = ({
                   >
                     {rowSelection && (
                       <span
-                        className={`pointer-events-none absolute bottom-1.5 top-1.5 z-[1] rounded-xl border border-primary/45 bg-primary/18 shadow-[0_0_0_1px_hsl(var(--primary)/0.24),0_16px_34px_-24px_hsl(var(--primary)/0.95)] ${
+                        className={`pointer-events-none absolute bottom-1.5 top-1.5 z-base rounded-xl border border-primary/45 bg-primary/18 shadow-[0_0_0_1px_hsl(var(--primary)/0.24),0_16px_34px_-24px_hsl(var(--primary)/0.95)] ${
                           reducedMotion ? '' : 'rf-selection-sheen'
                         }`}
                         style={{
@@ -309,7 +309,7 @@ const ScheduleTimelineDesktop = ({
                       const showCueHandles = isAvailable && !inActiveRange;
 
                       const baseClass =
-                        'group relative z-[2] h-14 whitespace-nowrap border-r border-white/5 px-1.5 text-center text-[10px] font-semibold text-muted-foreground transition';
+                        'group relative z-content h-14 whitespace-nowrap border-r border-white/5 px-1.5 text-center text-[10px] font-semibold text-muted-foreground transition';
 
                       const stateClass = isAvailable
                         ? 'bg-transparent text-foreground hover:bg-primary/[0.08]'

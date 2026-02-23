@@ -28,16 +28,19 @@ const RoomDetailOverlay = () => {
   const reducedMotion = useReducedMotion();
   const guardToastRef = React.useRef(false);
 
+  const currentRoomId = activeRoomId ?? params.roomId ?? null;
+  const lastRoomIdRef = React.useRef(currentRoomId);
+  if (currentRoomId) {
+    lastRoomIdRef.current = currentRoomId;
+  }
+  const roomId = currentRoomId ?? lastRoomIdRef.current;
+
   const schedule = useScheduleQuery(parseDateKey(selectedDateKey));
   const [selectedRange, setSelectedRange] = React.useState<DirectSelectionRange | null>(null);
   const [nowTs, setNowTs] = React.useState(Date.now());
 
-  const roomId = activeRoomId ?? params.roomId ?? null;
-
   const roomModel = React.useMemo(() => {
-    if (!roomId) {
-      return {slots: []};
-    }
+    if (!roomId) return {slots: []};
 
     return {
       slots: schedule.model.slots
@@ -48,9 +51,7 @@ const RoomDetailOverlay = () => {
 
   const roomMeta = React.useMemo(() => {
     const firstRoom = roomModel.slots[0]?.rooms[0];
-    if (!firstRoom) {
-      return null;
-    }
+    if (!firstRoom) return null;
     return {
       roomName: firstRoom.roomName,
       floor: firstRoom.floor,
@@ -61,10 +62,10 @@ const RoomDetailOverlay = () => {
   const updatedSecondsAgo = Math.max(0, Math.floor((nowTs - schedule.dataUpdatedAt) / 1000));
 
   React.useEffect(() => {
-    if (roomId && activeRoomId !== roomId) {
-      useHubStore.getState().enterRoom(roomId);
+    if (currentRoomId && activeRoomId !== currentRoomId) {
+      useHubStore.getState().enterRoom(currentRoomId);
     }
-  }, [activeRoomId, roomId]);
+  }, [activeRoomId, currentRoomId]);
 
   React.useEffect(() => {
     const id = window.setInterval(() => {
@@ -74,7 +75,7 @@ const RoomDetailOverlay = () => {
   }, []);
 
   React.useEffect(() => {
-    if (!roomId || schedule.isLoading || schedule.isError) {
+    if (!currentRoomId || schedule.isLoading || schedule.isError) {
       return;
     }
 
@@ -90,7 +91,7 @@ const RoomDetailOverlay = () => {
 
     useHubStore.getState().exitRoom();
     navigate('/schedule', {replace: true});
-  }, [navigate, roomId, roomModel.slots.length, schedule.isError, schedule.isLoading]);
+  }, [navigate, currentRoomId, roomModel.slots.length, schedule.isError, schedule.isLoading]);
 
   const createMutation = useCreateBookingMutation(selectedDateKey, roomId ?? '');
 
@@ -115,21 +116,20 @@ const RoomDetailOverlay = () => {
   if (!roomId) return null;
 
   const closeRoomDetail = () => {
-    useHubStore.getState().exitRoom();
     navigate('/schedule');
   };
 
   return (
     <motion.div
       key="room-detail-overlay"
-      className="pointer-events-auto absolute inset-0 z-40 flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
+      className="pointer-events-auto absolute inset-0 z-overlay flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
       initial={reducedMotion ? false : {opacity: 0}}
       animate={reducedMotion ? undefined : {opacity: 1, scale: cameraPose === 'room' ? 1 : 0.98}}
       exit={reducedMotion ? undefined : {opacity: 0}}
       transition={motionTokens.overlay}
       onClick={closeRoomDetail}
     >
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+      {/* Локальный backdrop удален, так как Layout.tsx теперь предоставляет глобальный */}
       <motion.div
         layoutId={`room-card-${roomId}`}
         transition={{type: 'spring', stiffness: 280, damping: 24}}
@@ -223,11 +223,8 @@ const RoomDetailOverlay = () => {
               <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
                 <GlassCard variant="compact" className="flex flex-col gap-3 rounded-2xl border border-white/12 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="rf-tabular m-0 text-sm font-semibold text-foreground">
+                    <p className="rf-tabular m-0 mb-2 text-sm font-semibold text-foreground">
                       {selectedRange ? `${selectedRange.start} - ${selectedRange.end}` : 'Выберите диапазон'}
-                    </p>
-                    <p className="rf-tabular m-0 mt-1 text-xs text-muted-foreground">
-                      {selectedRange ? `Слотов: ${selectedRange.slotCount}` : 'Выделите интервалы на таймлайне'}
                     </p>
                   </div>
                   <div className="flex w-full items-center gap-2 sm:w-auto">

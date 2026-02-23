@@ -91,7 +91,7 @@ const DockItemButton = ({
                 />
               )
             )}
-            <span className="relative z-[1] inline-flex items-center gap-2">
+            <span className="relative z-base inline-flex items-center gap-2">
               <item.icon size={15} />
               <span className="hidden md:inline">{item.label}</span>
             </span>
@@ -182,7 +182,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
         initial={reducedMotion ? false : {y: 26, opacity: 0}}
         animate={reducedMotion ? undefined : {y: 0, opacity: 1}}
         transition={motionPreset.springGentle}
-        className="pointer-events-auto fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 px-3"
+        className="pointer-events-auto fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-dock px-3"
         aria-label="Основная навигация"
       >
         <motion.div
@@ -260,7 +260,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             exit={reducedMotion ? undefined : {opacity: 0}}
             transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
             className={cn(
-              'z-[70] min-w-[220px] p-2',
+              'z-dockMenu min-w-[220px] p-2',
               isDesktop && accountMenuAnchor
                 ? 'fixed'
                 : 'absolute bottom-full right-3 mb-2 rounded-2xl border border-white/20 bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))] shadow-glow backdrop-blur-2xl'
