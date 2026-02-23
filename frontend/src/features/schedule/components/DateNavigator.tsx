@@ -140,6 +140,11 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
           border: 1.5px solid hsl(var(--primary) / 0.3) !important;
         }
 
+        .rf-day-picker .rdp-selected.rdp-today .rdp-day_button {
+          color: hsl(var(--primary-foreground)) !important;
+          border-color: hsl(var(--primary-foreground) / 0.35) !important;
+        }
+
         .rf-day-picker .rdp-month_caption {
           font-weight: 700 !important;
           font-size: 1.05rem !important;
