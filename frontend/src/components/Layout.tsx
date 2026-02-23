@@ -62,6 +62,7 @@ const Layout: React.FC = () => {
     location.pathname.includes('/room/') ||
     location.pathname.includes('/my-bookings') ||
     location.pathname.includes('/admin');
+
   const handleThemeToggle = (origin?: {x: number; y: number}) => {
     const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark';
     if (reducedMotion || !origin) {
@@ -91,14 +92,14 @@ const Layout: React.FC = () => {
     <div className="relative h-screen w-screen overflow-hidden bg-background text-foreground selection:bg-primary/30">
       <Toaster position="top-right" />
 
-      <div className={cn('absolute inset-0 z-0 rf-stage-surface', theme === 'light' ? 'rf-stage-surface--light' : 'rf-stage-surface--dark')} />
-      <div className={cn('absolute inset-0 z-0 rf-stage-grid', theme === 'light' ? 'rf-stage-grid--light' : 'rf-stage-grid--dark')} />
+      <div className={cn('absolute inset-0 z-base rf-stage-surface', theme === 'light' ? 'rf-stage-surface--light' : 'rf-stage-surface--dark')} />
+      <div className={cn('absolute inset-0 z-base rf-stage-grid', theme === 'light' ? 'rf-stage-grid--light' : 'rf-stage-grid--dark')} />
 
       <AnimatePresence>
         {themeRipple && (
           <motion.div
             key={themeRipple.id}
-            className="pointer-events-none absolute inset-0 z-[6]"
+            className="pointer-events-none absolute inset-0 z-themeRipple"
             initial={{clipPath: `circle(0px at ${themeRipple.x}px ${themeRipple.y}px)`}}
             animate={{clipPath: `circle(${themeRipple.radius}px at ${themeRipple.x}px ${themeRipple.y}px)`}}
             exit={{opacity: 0}}
@@ -132,23 +133,33 @@ const Layout: React.FC = () => {
 
       <LayoutGroup id="scene-shared-layout">
         <motion.div
-          className="relative z-10 h-full w-full"
+          className="relative z-content h-full w-full"
           animate={{
             scale: isDetailView ? 0.965 : 1,
-            filter: isDetailView ? 'blur(12px) brightness(0.72)' : 'blur(0px) brightness(1)',
-            opacity: isDetailView ? 0.82 : 1,
+            // filter и opacity удалены отсюда, чтобы не ломать GPU-рендеринг вложенных карточек
           }}
           transition={{type: 'spring', stiffness: 240, damping: 26}}
         >
           <HubLayer />
         </motion.div>
 
+        {/* Единый глобальный слой размытия, который аккуратно перекрывает HubLayer */}
+        <motion.div
+          className="pointer-events-none fixed inset-0 z-popover bg-black/20 backdrop-blur-[8px]"
+          initial={false}
+          animate={{
+            opacity: isDetailView ? 1 : 0,
+            visibility: isDetailView ? 'visible' : 'hidden',
+          }}
+          transition={{duration: 0.3}}
+        />
+
         <OverlayLayer />
         <NavigationLayer theme={theme} onToggleTheme={handleThemeToggle} />
       </LayoutGroup>
 
       {location.pathname.startsWith('/booking/confirmed') ? (
-        <div className="fixed inset-0 z-50 overflow-auto px-4 py-20">
+        <div className="fixed inset-0 z-dock overflow-auto px-4 py-20">
           <div className="mx-auto max-w-6xl">
             <Outlet />
           </div>
