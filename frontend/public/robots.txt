@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /schedule
+Disallow: /admin
+Disallow: /my-bookings
+Disallow: /api/
+Disallow: /booking/confirmed
+Sitemap: http://localhost:8080/sitemap.xml
