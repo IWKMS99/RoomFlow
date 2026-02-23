@@ -120,7 +120,7 @@ const RoomDetailOverlay = () => {
   return (
     <motion.div
       key="room-detail-overlay"
-      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center p-2 sm:p-4"
+      className="pointer-events-auto absolute inset-0 z-40 flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
       initial={reducedMotion ? false : {opacity: 0}}
       animate={reducedMotion ? undefined : {opacity: 1, scale: cameraPose === 'room' ? 1 : 0.98}}
       exit={reducedMotion ? undefined : {opacity: 0}}
@@ -131,7 +131,7 @@ const RoomDetailOverlay = () => {
       <motion.div
         layoutId={`room-card-${roomId}`}
         transition={{type: 'spring', stiffness: 280, damping: 24}}
-        className="rf-modal relative w-full max-w-6xl overflow-hidden rounded-3xl p-4 sm:p-6"
+        className="rf-modal relative max-h-[calc(100dvh-8.5rem)] w-full max-w-6xl overflow-y-auto rounded-3xl p-4 sm:p-6 rf-scrollbar"
         onClick={(event) => event.stopPropagation()}
       >
         <motion.div

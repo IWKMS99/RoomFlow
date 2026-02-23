@@ -103,7 +103,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
       initial={reducedMotion ? false : {y: 26, opacity: 0}}
       animate={reducedMotion ? undefined : {y: 0, opacity: 1}}
       transition={motionPreset.springGentle}
-      className="pointer-events-auto fixed inset-x-0 bottom-4 z-50 px-3"
+      className="pointer-events-auto fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 px-3"
       aria-label="Основная навигация"
     >
       <div className="mx-auto flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/20 bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))] p-1.5 shadow-glow backdrop-blur-2xl rf-scrollbar">

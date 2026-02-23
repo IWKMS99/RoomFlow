@@ -22,6 +22,9 @@ const MyBookingsOverlay = () => {
   const cameraPose = useHubStore((state) => state.cameraPose);
   const bookingsQuery = useMyBookingsQuery(isAuthenticated);
   const cancelMutation = useCancelBookingMutation(selectedDateKey);
+  const sortedBookings = [...(bookingsQuery.data ?? [])].sort(
+    (left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime()
+  );
 
   if (!isAuthenticated) {
     return null;
@@ -38,13 +41,17 @@ const MyBookingsOverlay = () => {
 
   return (
     <motion.div
-      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center p-2 sm:p-4"
+      className="pointer-events-auto absolute inset-0 z-40 flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
       initial={reducedMotion ? false : {opacity: 0}}
       animate={reducedMotion ? undefined : {opacity: 1, x: cameraPose === 'bookings' ? 0 : 16}}
       exit={reducedMotion ? undefined : {opacity: 0}}
       transition={motionTokens.overlay}
     >
-      <motion.div layoutId="my-bookings-panel" transition={motionTokens.card} className="rf-modal w-full max-w-5xl rounded-3xl p-4 sm:p-6">
+      <motion.div
+        layoutId="my-bookings-panel"
+        transition={motionTokens.card}
+        className="rf-modal flex max-h-[calc(100dvh-8.5rem)] w-full max-w-5xl flex-col rounded-3xl p-4 sm:p-6"
+      >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="m-0 text-2xl font-bold text-foreground">Мои бронирования</h2>
           <MagneticButton
@@ -58,51 +65,53 @@ const MyBookingsOverlay = () => {
           </MagneticButton>
         </div>
 
-        {bookingsQuery.isLoading ? (
-          <p className="text-sm text-muted-foreground">Загрузка бронирований...</p>
-        ) : bookingsQuery.isError ? (
-          <div className="text-sm text-danger">
-            Не удалось загрузить бронирования.
-            <button type="button" className="ml-2 underline" onClick={() => void bookingsQuery.refetch()}>
-              Повторить
-            </button>
-          </div>
-        ) : (bookingsQuery.data ?? []).length === 0 ? (
-          <p className="text-sm text-muted-foreground">Пока нет активных или исторических бронирований.</p>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {(bookingsQuery.data ?? []).map((booking, idx) => {
-              const canCancel = booking.status === 'CONFIRMED' && new Date(booking.startTime).getTime() > Date.now();
-              return (
-                <motion.article
-                  key={booking.id}
-                  layoutId={`booking-card-${booking.id}`}
-                  initial={reducedMotion ? false : {opacity: 0, y: 8}}
-                  animate={reducedMotion ? undefined : {opacity: 1, y: 0}}
-                  transition={reducedMotion ? motionPreset.quick : {delay: idx * 0.03, ...motionTokens.fade}}
-                  className="rounded-2xl border border-white/16 bg-card/70 p-4"
-                >
-                  <p className="m-0 text-lg font-semibold text-foreground">{booking.roomName}</p>
-                  <p className="m-0 mt-1 text-sm text-muted-foreground">
-                    {new Date(booking.startTime).toLocaleDateString(locale)} •{' '}
-                    {new Date(booking.startTime).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}
-                  </p>
-                  <p className="m-0 mt-2 text-xs text-muted-foreground">Статус: {booking.status}</p>
+        <div className="min-h-0 overflow-y-auto pr-1 rf-scrollbar">
+          {bookingsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Загрузка бронирований...</p>
+          ) : bookingsQuery.isError ? (
+            <div className="text-sm text-danger">
+              Не удалось загрузить бронирования.
+              <button type="button" className="ml-2 underline" onClick={() => void bookingsQuery.refetch()}>
+                Повторить
+              </button>
+            </div>
+          ) : sortedBookings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Пока нет активных или исторических бронирований.</p>
+          ) : (
+            <div className="grid gap-3 pb-1 md:grid-cols-2">
+              {sortedBookings.map((booking, idx) => {
+                const canCancel = booking.status === 'CONFIRMED' && new Date(booking.startTime).getTime() > Date.now();
+                return (
+                  <motion.article
+                    key={booking.id}
+                    layoutId={`booking-card-${booking.id}`}
+                    initial={reducedMotion ? false : {opacity: 0, y: 8}}
+                    animate={reducedMotion ? undefined : {opacity: 1, y: 0}}
+                    transition={reducedMotion ? motionPreset.quick : {delay: idx * 0.03, ...motionTokens.fade}}
+                    className="rounded-2xl border border-white/16 bg-card/70 p-4"
+                  >
+                    <p className="m-0 text-lg font-semibold text-foreground">{booking.roomName}</p>
+                    <p className="m-0 mt-1 text-sm text-muted-foreground">
+                      {new Date(booking.startTime).toLocaleDateString(locale)} •{' '}
+                      {new Date(booking.startTime).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}
+                    </p>
+                    <p className="m-0 mt-2 text-xs text-muted-foreground">Статус: {booking.status}</p>
 
-                  {canCancel && (
-                    <MagneticButton
-                      onClick={() => void handleCancel(booking.id)}
-                      disabled={cancelMutation.isPending}
-                      className="mt-3 rounded-lg border border-danger/45 bg-danger/20 px-3 py-1.5 text-xs font-semibold text-danger"
-                    >
-                      {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}
-                    </MagneticButton>
-                  )}
-                </motion.article>
-              );
-            })}
-          </div>
-        )}
+                    {canCancel && (
+                      <MagneticButton
+                        onClick={() => void handleCancel(booking.id)}
+                        disabled={cancelMutation.isPending}
+                        className="mt-3 rounded-lg border border-danger/45 bg-danger/20 px-3 py-1.5 text-xs font-semibold text-danger"
+                      >
+                        {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}
+                      </MagneticButton>
+                    )}
+                  </motion.article>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </motion.div>
     </motion.div>
   );

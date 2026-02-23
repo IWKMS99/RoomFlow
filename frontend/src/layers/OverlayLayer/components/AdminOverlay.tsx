@@ -61,13 +61,17 @@ const AdminOverlay = () => {
 
   return (
     <motion.div
-      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center p-2 sm:p-4"
+      className="pointer-events-auto absolute inset-0 z-40 flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
       initial={reducedMotion ? false : {opacity: 0}}
       animate={reducedMotion ? undefined : {opacity: 1, y: cameraPose === 'admin' ? 0 : -12}}
       exit={reducedMotion ? undefined : {opacity: 0}}
       transition={motionTokens.overlay}
     >
-      <motion.div layoutId="admin-panel" transition={motionTokens.card} className="rf-modal w-full max-w-5xl rounded-3xl p-4 sm:p-6">
+      <motion.div
+        layoutId="admin-panel"
+        transition={motionTokens.card}
+        className="rf-modal flex max-h-[calc(100dvh-8.5rem)] w-full max-w-5xl flex-col rounded-3xl p-4 sm:p-6"
+      >
         <div className="mb-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 text-2xl font-bold text-foreground">
             <Shield size={22} /> God Mode
@@ -83,8 +87,8 @@ const AdminOverlay = () => {
           </MagneticButton>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section className="grid gap-2">
+        <div className="grid min-h-0 gap-6 lg:grid-cols-2">
+          <section className="grid min-h-0 gap-2">
             <h3 className="m-0 text-lg font-semibold text-foreground">Пользователи</h3>
             {usersQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Загрузка пользователей...</p>
@@ -98,7 +102,7 @@ const AdminOverlay = () => {
             ) : (usersQuery.data ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Список пользователей пуст.</p>
             ) : (
-              <div className="grid gap-2">
+              <div className="grid min-h-0 content-start gap-2 overflow-auto pr-1 rf-scrollbar">
                 {(usersQuery.data ?? []).map((user) => {
                   const isAdmin = user.roles.includes('ROLE_ADMIN');
                   const nextRole = isAdmin ? 'ROLE_USER' : 'ROLE_ADMIN';
@@ -119,7 +123,7 @@ const AdminOverlay = () => {
             )}
           </section>
 
-          <section className="grid gap-3">
+          <section className="flex min-h-0 flex-col gap-3">
             <h3 className="m-0 text-lg font-semibold text-foreground">Все бронирования</h3>
 
             <div className="grid gap-2 sm:grid-cols-3">
@@ -162,7 +166,7 @@ const AdminOverlay = () => {
             ) : (adminBookingsQuery.data ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">На выбранную дату бронирований не найдено.</p>
             ) : (
-              <div className="max-h-[420px] space-y-2 overflow-auto pr-1 rf-scrollbar">
+              <div className="min-h-0 flex-1 space-y-2 overflow-auto pr-1 rf-scrollbar">
                 {(adminBookingsQuery.data ?? []).map((booking) => (
                   <article key={booking.id} className="rounded-xl border border-white/14 bg-card/60 px-3 py-2">
                     <p className="m-0 text-sm font-semibold text-foreground">{booking.roomName}</p>
