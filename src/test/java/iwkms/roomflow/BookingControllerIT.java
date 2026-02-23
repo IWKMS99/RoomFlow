@@ -4,6 +4,7 @@ import static iwkms.roomflow.util.Constants.Test.*;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -16,11 +17,13 @@ import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
 import iwkms.roomflow.modules.booking.impl.domain.Room;
 import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
 import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
+import iwkms.roomflow.modules.integration.holiday.service.HolidayService;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -33,6 +36,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +63,9 @@ class BookingControllerIT {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private HolidayService holidayService;
 
     private User testUser1, testUser2, testUser3, testUser4;
     private Room roomA;
@@ -93,6 +100,12 @@ class BookingControllerIT {
         roomA = roomRepository
                 .findById(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
                 .orElseThrow();
+        when(holidayService.getHolidays(LocalDate.now().plusDays(1).getYear(), "RU"))
+                .thenReturn(Collections.emptyList());
+        when(holidayService.getHolidays(LocalDate.now().plusDays(2).getYear(), "RU"))
+                .thenReturn(Collections.emptyList());
+        when(holidayService.getHolidays(LocalDate.now().plusDays(3).getYear(), "RU"))
+                .thenReturn(Collections.emptyList());
     }
 
     @Test
