@@ -54,12 +54,34 @@ test.beforeEach(async ({page}) => {
   await page.route('**/api/v1/auth/refresh', async (route) => {
     await route.fulfill({status: 401, contentType: 'application/json', body: JSON.stringify({message: 'no refresh'})});
   });
+
+  await page.route('**/api/v1/admin/bookings**', async (route) => {
+    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify([])});
+  });
 });
 
 test('schedule page renders visible room field content', async ({page}) => {
   await page.goto('/schedule');
   await expect(page.getByRole('heading', {name: 'Бронирование'})).toBeVisible();
+  await expect(page.getByRole('button', {name: /\d{4}/})).toBeVisible();
   await expect(page.locator('[data-room-id="room-a"]').first()).toBeVisible();
+});
+
+test('login form validates bad email on client', async ({page}) => {
+  await page.goto('/login');
+  await page.locator('#email').fill('wrong-email');
+  await page.locator('#password').fill('12345678');
+  await page.getByRole('button', {name: 'Войти'}).click();
+  await expect(page.getByText('Введите корректный email.')).toBeVisible();
+});
+
+test('register form validates password mismatch on client', async ({page}) => {
+  await page.goto('/register');
+  await page.locator('#email').fill('member@roomflow.local');
+  await page.locator('#password').fill('12345678');
+  await page.locator('#confirmPassword').fill('87654321');
+  await page.getByRole('button', {name: 'Зарегистрироваться'}).click();
+  await expect(page.getByText('Пароли не совпадают.')).toBeVisible();
 });
 
 test('route /schedule/room/:id opens room detail flow and can return', async ({page}) => {
@@ -117,11 +139,35 @@ test('admin deep-link renders overlay for admin user', async ({page}) => {
       body: JSON.stringify([{id: 'u-2', email: 'member@roomflow.local', roles: ['ROLE_USER']}]),
     });
   });
+  await page.route('**/api/v1/admin/bookings**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'ab-1',
+          roomId: 'room-a',
+          roomName: 'Комната A',
+          capacity: 8,
+          floor: 2,
+          userId: 'u-2',
+          userEmail: 'member@roomflow.local',
+          startTime: '2026-02-23T10:00:00',
+          endTime: '2026-02-23T10:30:00',
+          status: 'CONFIRMED',
+        },
+      ]),
+    });
+  });
+  await page.route('**/api/v1/admin/bookings/*', async (route) => {
+    await route.fulfill({status: 204});
+  });
 
   await page.goto('/admin');
   await expect(page).toHaveURL('/admin');
   await expect(page.getByText('God Mode')).toBeVisible();
-  await expect(page.getByText('member@roomflow.local')).toBeVisible();
+  await expect(page.getByText('member@roomflow.local').first()).toBeVisible();
+  await page.getByRole('button', {name: 'Отменить'}).first().click();
 });
 
 test('admin deep-link redirects non-admin user to /schedule', async ({page}) => {
