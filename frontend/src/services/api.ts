@@ -1,6 +1,14 @@
 import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
 import type {AdminBooking, AdminBookingFilters, BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
 import type {AuthUser} from '../types/user.ts';
+import type {
+    AdminRoom,
+    AdminRoomsFilters,
+    CreateAdminRoomPayload,
+    PageResponse,
+    RoomFile,
+    UpdateAdminRoomPayload,
+} from '../types/adminRooms.ts';
 
 export interface AdminUser {
     id: string;
@@ -202,4 +210,43 @@ export const getAdminBookings = async (filters: AdminBookingFilters): Promise<Ad
 
 export const cancelAdminBooking = async (bookingId: string): Promise<void> => {
     await apiClient.delete(`/admin/bookings/${bookingId}`);
+};
+
+export const getAdminRooms = async (filters: AdminRoomsFilters): Promise<PageResponse<AdminRoom>> => {
+    const response = await apiClient.get<PageResponse<AdminRoom>>('/admin/rooms', {
+        params: filters,
+    });
+    return response.data;
+};
+
+export const createAdminRoom = async (payload: CreateAdminRoomPayload): Promise<AdminRoom> => {
+    const response = await apiClient.post<AdminRoom>('/admin/rooms', payload);
+    return response.data;
+};
+
+export const updateAdminRoom = async (roomId: string, payload: UpdateAdminRoomPayload): Promise<AdminRoom> => {
+    const response = await apiClient.put<AdminRoom>(`/admin/rooms/${roomId}`, payload);
+    return response.data;
+};
+
+export const deleteAdminRoom = async (roomId: string): Promise<void> => {
+    await apiClient.delete(`/admin/rooms/${roomId}`);
+};
+
+export const uploadRoomFile = async (roomId: string, file: File): Promise<RoomFile> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<RoomFile>(`/admin/rooms/${roomId}/files`, formData, {
+        headers: {'Content-Type': 'multipart/form-data'},
+    });
+    return response.data;
+};
+
+export const getRoomFiles = async (roomId: string): Promise<RoomFile[]> => {
+    const response = await apiClient.get<RoomFile[]>(`/admin/rooms/${roomId}/files`);
+    return response.data;
+};
+
+export const deleteRoomFile = async (fileId: string): Promise<void> => {
+    await apiClient.delete(`/admin/rooms/files/${fileId}`);
 };

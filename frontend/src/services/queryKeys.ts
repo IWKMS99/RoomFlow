@@ -4,4 +4,7 @@ export const queryKeys = {
   myBookings: () => ['myBookings'] as const,
   adminUsers: () => ['adminUsers'] as const,
   adminBookings: (filters: {date: string; roomId?: string; userEmail?: string; status?: string}) => ['adminBookings', filters] as const,
+  adminRooms: (filters: {page: number; size: number; search?: string; floor?: number; minCapacity?: number; sort?: string}) =>
+    ['adminRooms', filters] as const,
+  roomFiles: (roomId: string) => ['roomFiles', roomId] as const,
 };
