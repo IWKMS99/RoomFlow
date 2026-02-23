@@ -1,10 +1,9 @@
+import React from 'react';
 import {createRootRouteWithContext, createRoute, createRouter, redirect, Outlet} from '@tanstack/react-router';
 import {z} from 'zod';
 import AuthLayout from '../components/AuthLayout';
 import Layout from '../components/Layout';
-import ConfirmationPage from '../pages/ConfirmationPage';
-import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
+import NotFoundPage from '../pages/NotFoundPage';
 import SceneRouteBridge from '../pages/SceneRouteBridge';
 
 interface RouterAuthContext {
@@ -30,8 +29,22 @@ const adminSearchSchema = z.object({
   sort: z.string().optional(),
 });
 
+const LoginPage = React.lazy(() => import('../pages/LoginPage'));
+const RegisterPage = React.lazy(() => import('../pages/RegisterPage'));
+const ConfirmationPage = React.lazy(() => import('../pages/ConfirmationPage'));
+
+const withSuspense = (Component: React.LazyExoticComponent<React.ComponentType>) => {
+  const Wrapped = () => (
+    <React.Suspense fallback={null}>
+      <Component />
+    </React.Suspense>
+  );
+  return Wrapped;
+};
+
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
+  notFoundComponent: NotFoundPage,
 });
 
 const authLayoutRoute = createRoute({
@@ -48,14 +61,14 @@ const authLayoutRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => authLayoutRoute,
   path: '/login',
-  component: LoginPage,
+  component: withSuspense(LoginPage),
   validateSearch: (search) => loginSearchSchema.parse(search),
 });
 
 const registerRoute = createRoute({
   getParentRoute: () => authLayoutRoute,
   path: '/register',
-  component: RegisterPage,
+  component: withSuspense(RegisterPage),
 });
 
 const appLayoutRoute = createRoute({
@@ -116,7 +129,7 @@ const myBookingsRoute = createRoute({
 const bookingConfirmedRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/booking/confirmed',
-  component: ConfirmationPage,
+  component: withSuspense(ConfirmationPage),
   beforeLoad: requireAuthenticated,
 });
 
