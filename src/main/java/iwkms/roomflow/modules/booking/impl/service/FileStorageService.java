@@ -33,11 +33,12 @@ public class FileStorageService {
         validateFile(file);
 
         String contentType = normalizeContentType(file.getContentType());
-        String extension = switch (contentType) {
-            case "application/pdf" -> "pdf";
-            case "image/png" -> "png";
-            default -> "jpg";
-        };
+        String extension =
+                switch (contentType) {
+                    case "application/pdf" -> "pdf";
+                    case "image/png" -> "png";
+                    default -> "jpg";
+                };
         String key = "rooms/" + UUID.randomUUID() + "." + extension;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()

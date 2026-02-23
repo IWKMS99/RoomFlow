@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it} from 'vitest';
 import {Outlet, RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter} from '@tanstack/react-router';
-import {render, waitFor} from '@testing-library/react';
+import {render} from '@testing-library/react';
+import {waitFor} from '@testing-library/dom';
 import {useRouteSceneSync} from '../useRouteSceneSync';
 import {useHubStore} from '../../store/useHubStore';
 

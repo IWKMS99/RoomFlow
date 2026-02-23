@@ -1,7 +1,8 @@
 import React from 'react';
 import {describe, expect, it, vi, beforeEach} from 'vitest';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {renderHook, waitFor} from '@testing-library/react';
+import {renderHook} from '@testing-library/react';
+import {waitFor} from '@testing-library/dom';
 import {useCancelBookingMutation} from '../hooks/useCancelBookingMutation';
 import {queryKeys} from '../queryKeys';
 
