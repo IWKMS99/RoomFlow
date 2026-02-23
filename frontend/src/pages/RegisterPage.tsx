@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
 import {Link, useNavigate} from '@tanstack/react-router';
 import {useForm} from 'react-hook-form';
@@ -11,21 +11,28 @@ import {registerUser} from '../services/api';
 import {getApiErrorMessage} from '../lib/httpError';
 import {motionPreset} from '../lib/motion';
 
-const registerSchema = z
-  .object({
-    email: z.string().email('Введите корректный email.'),
-    password: z.string().min(8, 'Минимальная длина пароля — 8 символов.'),
-    confirmPassword: z.string().min(8, 'Минимальная длина пароля — 8 символов.'),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Пароли не совпадают.',
-  });
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
 
 const RegisterPage: React.FC = () => {
   const {t} = useTranslation();
+  const registerSchema = useMemo(
+    () =>
+      z
+        .object({
+          email: z.string().email(t('auth.validation.email')),
+          password: z.string().min(8, t('auth.validation.passwordMin')),
+          confirmPassword: z.string().min(8, t('auth.validation.passwordMin')),
+        })
+        .refine((values) => values.password === values.confirmPassword, {
+          path: ['confirmPassword'],
+          message: t('auth.validation.passwordsMatch'),
+        }),
+    [t]
+  );
   const reducedMotion = useReducedMotion();
   const [error, setError] = useState<string | null>(null);
   const auth = useAuth();
@@ -52,7 +59,7 @@ const RegisterPage: React.FC = () => {
       navigate({to: '/schedule'});
     } catch (err: unknown) {
       console.error('Registration failed:', err);
-      setError(getApiErrorMessage(err, 'Ошибка регистрации.'));
+      setError(getApiErrorMessage(err, t('auth.registerError')));
     }
   };
 
@@ -77,14 +84,14 @@ const RegisterPage: React.FC = () => {
       />
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/75 to-transparent" />
       <div className="relative">
-        <p className="rf-meta m-0 text-[11px] text-muted-foreground">RoomFlow setup</p>
+        <p className="rf-meta m-0 text-[11px] text-muted-foreground">{t('auth.registerMeta')}</p>
         <h1 className="rf-display mb-6 mt-2 text-3xl font-bold">{t('auth.registerTitle')}</h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="relative space-y-4">
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            Email
+            {t('auth.email')}
           </label>
           <input
             id="email"
@@ -110,7 +117,7 @@ const RegisterPage: React.FC = () => {
 
         <div className="space-y-1.5">
           <label htmlFor="confirmPassword" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            Повторите пароль
+            {t('auth.confirmPassword')}
           </label>
           <input
             id="confirmPassword"

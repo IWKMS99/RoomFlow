@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import {useTranslation} from 'react-i18next';
 import type {ScheduleView} from '../../../types/booking';
 import {buildRange, getAvailableSlotsForRoom, getDaySlots, sortSlots, timeToMinutes} from '../lib/timeSlots';
 import {validateSlotRange} from '../lib/validateSlotRange';
@@ -34,6 +35,7 @@ export const useBookingAvailability = ({
   maxHours = MAX_BOOKING_HOURS,
   workingDayEnd = WORKING_DAY_END,
 }: BookingAvailabilityOptions): BookingAvailability => {
+  const {t} = useTranslation();
   const daySlots = useMemo(() => getDaySlots(schedule), [schedule]);
   const availableSlots = useMemo(() => getAvailableSlotsForRoom(schedule, roomId), [schedule, roomId]);
   const selectedSorted = useMemo(() => sortSlots(selectedSlots), [selectedSlots]);
@@ -45,7 +47,7 @@ export const useBookingAvailability = ({
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   const anchor = anchorSlot ?? selectedSorted[0] ?? null;
-  const selectionHint = roomId ? undefined : 'Сначала выберите комнату, затем временные слоты.';
+  const selectionHint = roomId ? undefined : t('booking.selectionHint');
 
   const buildSelectionFromAnchor = (targetTime: string) => {
     if (!anchor) {
@@ -56,25 +58,25 @@ export const useBookingAvailability = ({
 
   const getSlotDisableReason = (time: string) => {
     if (isToday && timeToMinutes(time) <= nowMinutes) {
-      return 'Нельзя забронировать время в прошлом';
+      return t('booking.disable.past');
     }
 
     if (!roomId) {
-      return 'Сначала выберите комнату.';
+      return t('booking.disable.selectRoom');
     }
 
     const timeIndex = daySlots.indexOf(time);
     if (timeIndex === -1) {
-      return 'Слот вне текущего расписания.';
+      return t('booking.disable.outOfSchedule');
     }
 
     const workEndStart = timeToMinutes(workingDayEnd) - 60;
     if (timeToMinutes(time) > workEndStart) {
-      return 'Слот выходит за пределы рабочего дня.';
+      return t('booking.disable.outOfWorkingDay');
     }
 
     if (!availableSlots.has(time)) {
-      return 'Этот слот уже занят.';
+      return t('booking.disable.alreadyBusy');
     }
 
     if (!anchor) {

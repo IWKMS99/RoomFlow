@@ -20,13 +20,6 @@ type BookingTab = 'active' | 'history';
 
 const ACTIVE_STATUSES: BookingStatus[] = ['REQUESTED', 'CONFIRMED'];
 
-const statusLabelMap: Record<BookingStatus, string> = {
-  REQUESTED: 'В обработке',
-  CONFIRMED: 'Подтверждено',
-  COMPLETED: 'Завершено',
-  CANCELLED: 'Отменено',
-};
-
 const statusToneMap: Record<BookingStatus, 'warning' | 'active' | 'muted' | 'danger'> = {
   REQUESTED: 'warning',
   CONFIRMED: 'active',
@@ -41,7 +34,7 @@ const sortByStartDesc = (left: BookingResponse, right: BookingResponse) =>
   new Date(right.startTime).getTime() - new Date(left.startTime).getTime();
 
 const MyBookingsOverlay = () => {
-  const {i18n} = useTranslation();
+  const {i18n, t} = useTranslation();
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
@@ -69,6 +62,15 @@ const MyBookingsOverlay = () => {
     [bookings, nowTs]
   );
   const visibleBookings = activeTab === 'active' ? activeBookings : historyBookings;
+  const statusLabelMap: Record<BookingStatus, string> = useMemo(
+    () => ({
+      REQUESTED: t('myBookings.status.requested'),
+      CONFIRMED: t('myBookings.status.confirmed'),
+      COMPLETED: t('myBookings.status.completed'),
+      CANCELLED: t('myBookings.status.cancelled'),
+    }),
+    [t]
+  );
 
   if (!isAuthenticated) {
     return null;
@@ -77,9 +79,9 @@ const MyBookingsOverlay = () => {
   const handleCancel = async (bookingId: string) => {
     try {
       await cancelMutation.mutateAsync(bookingId);
-      toast.success('Бронирование отменено.');
+      toast.success(t('myBookings.toast.cancelSuccess'));
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Не удалось отменить бронирование.'));
+      toast.error(getApiErrorMessage(error, t('myBookings.toast.cancelError')));
     }
   };
 
@@ -98,38 +100,38 @@ const MyBookingsOverlay = () => {
         className="rf-modal flex max-h-[calc(100dvh-8.5rem)] w-full max-w-5xl flex-col rounded-3xl p-4 sm:p-6"
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="m-0 text-2xl font-bold text-foreground">Мои бронирования</h2>
+          <h2 className="m-0 text-2xl font-bold text-foreground">{t('myBookings.title')}</h2>
           <MagneticButton
             onClick={() => {
               useHubStore.getState().closeBookings();
               navigate({to: '/schedule'});
             }}
             data-cursor="view"
-            data-cursor-text="BACK"
+            data-cursor-text={t('cursor.back')}
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground"
           >
-            Закрыть
+            {t('myBookings.close')}
           </MagneticButton>
         </div>
 
         <div className="min-h-0 overflow-y-auto pr-1 rf-scrollbar">
           {bookingsQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Загрузка бронирований...</p>
+            <p className="text-sm text-muted-foreground">{t('myBookings.loading')}</p>
           ) : bookingsQuery.isError ? (
             <div className="text-sm text-danger">
-              Не удалось загрузить бронирования.
+              {t('myBookings.error')}
               <button
                 type="button"
                 className="ml-2 underline"
                 data-cursor="view"
-                data-cursor-text="RETRY"
+                data-cursor-text={t('cursor.retry')}
                 onClick={() => void bookingsQuery.refetch()}
               >
-                Повторить
+                {t('common.retry')}
               </button>
             </div>
           ) : bookings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Пока нет активных или исторических бронирований.</p>
+            <p className="text-sm text-muted-foreground">{t('myBookings.emptyAll')}</p>
           ) : (
             <div>
               <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -138,26 +140,26 @@ const MyBookingsOverlay = () => {
                   groupId="my-bookings-tab"
                   itemId="active"
                   data-cursor="view"
-                  data-cursor-text="ACTIVE"
+                  data-cursor-text={t('cursor.active')}
                   onClick={() => setActiveTab('active')}
                 >
-                  Активные ({activeBookings.length})
+                  {t('myBookings.tab.active', {count: activeBookings.length})}
                 </PillToggle>
                 <PillToggle
                   active={activeTab === 'history'}
                   groupId="my-bookings-tab"
                   itemId="history"
                   data-cursor="view"
-                  data-cursor-text="HISTORY"
+                  data-cursor-text={t('cursor.history')}
                   onClick={() => setActiveTab('history')}
                 >
-                  Прошедшие/отменённые ({historyBookings.length})
+                  {t('myBookings.tab.history', {count: historyBookings.length})}
                 </PillToggle>
               </div>
 
               {visibleBookings.length === 0 ? (
                 <p className="pb-2 text-sm text-muted-foreground">
-                  {activeTab === 'active' ? 'Сейчас нет активных бронирований.' : 'Нет прошедших или отменённых бронирований.'}
+                  {activeTab === 'active' ? t('myBookings.emptyActive') : t('myBookings.emptyHistory')}
                 </p>
               ) : (
                 <div className="grid gap-3 pb-1 md:grid-cols-2">
@@ -188,10 +190,10 @@ const MyBookingsOverlay = () => {
                             onClick={() => void handleCancel(booking.id)}
                             disabled={cancelMutation.isPending}
                             data-cursor={cancelMutation.isPending ? 'locked' : 'danger'}
-                            data-cursor-text={cancelMutation.isPending ? undefined : 'CANCEL'}
+                            data-cursor-text={cancelMutation.isPending ? undefined : t('cursor.cancel')}
                             className="mt-3 rounded-lg border border-danger/45 bg-danger/20 px-3 py-1.5 text-xs font-semibold text-danger"
                           >
-                            {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}
+                            {cancelMutation.isPending ? t('myBookings.cancelPending') : t('myBookings.cancel')}
                           </MagneticButton>
                         )}
                       </motion.article>

@@ -14,7 +14,7 @@ interface Props {
 }
 
 const DateNavigator = ({selectedDate, onSelect}: Props) => {
-  const {i18n} = useTranslation();
+  const {i18n, t} = useTranslation();
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -173,7 +173,7 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
             'group flex shrink-0 items-center gap-2.5 rounded-2xl px-3 py-2 transition-colors',
             isCalendarOpen ? 'bg-white/10' : 'hover:bg-white/5'
           )}
-          aria-label="Выбрать дату в календаре"
+          aria-label={t('schedule.dateNavigator.openCalendarAria')}
           aria-expanded={isCalendarOpen}
         >
           <div

@@ -2,6 +2,7 @@ import {useMemo} from 'react';
 import type React from 'react';
 import {useDrag} from '@use-gesture/react';
 import {useReducedMotion} from 'framer-motion';
+import {useTranslation} from 'react-i18next';
 import type {ScheduleRoomVm, ScheduleViewModel} from '../lib/scheduleViewModel';
 import {minutesToTime, timeToMinutes} from '../../booking/lib/timeSlots';
 import {useDirectBookingSelection, type DirectSelectionRange} from '../hooks/useDirectBookingSelection';
@@ -29,6 +30,7 @@ const ScheduleTimelineDesktop = ({
   onSelectionClear,
   compact = false,
 }: Props) => {
+  const {t} = useTranslation();
   const reducedMotion = useReducedMotion();
   const times = useMemo(() => model.slots.map((slot) => slot.time), [model.slots]);
 
@@ -237,11 +239,11 @@ const ScheduleTimelineDesktop = ({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <span className="inline-flex h-2.5 w-2.5 rounded-full border border-primary/45 bg-transparent" />
-        Свободно
+        {t('schedule.legend.free')}
         <span className="inline-flex h-2.5 w-2.5 rounded-full bg-white/35" />
-        Занято
+        {t('schedule.legend.busy')}
         <span className="inline-flex h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.35)]" />
-        Ваш выбор
+        {t('schedule.legend.selection')}
       </div>
 
       <div
@@ -250,7 +252,7 @@ const ScheduleTimelineDesktop = ({
         <div style={{minWidth: `${minGridWidth}px`}}>
           <div className="grid" style={{gridTemplateColumns: columns}}>
             <div className="sticky left-0 z-sticky border-b border-r border-white/14 bg-card/85 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground backdrop-blur">
-              Переговорки
+              {t('schedule.roomsHeader')}
             </div>
 
             {times.map((time) => (
@@ -276,7 +278,7 @@ const ScheduleTimelineDesktop = ({
                   <div className="sticky left-0 z-content border-b border-r border-white/14 bg-card/92 px-4 py-3 backdrop-blur">
                     <p className="m-0 text-sm font-semibold text-foreground">{row.roomName}</p>
                     <p className="rf-tabular m-0 text-xs text-muted-foreground">
-                      {row.capacity} мест • Этаж {row.floor}
+                      {t('schedule.roomMeta', {capacity: row.capacity, floor: row.floor})}
                     </p>
                   </div>
 
@@ -318,12 +320,12 @@ const ScheduleTimelineDesktop = ({
                           : 'bg-white/12 text-muted-foreground rf-hatch';
 
                       const statusLabel = inActiveRange
-                        ? 'Выбор'
+                        ? t('schedule.status.selection')
                         : isPast
-                          ? 'Прошло'
+                          ? t('schedule.status.past')
                           : isAvailable
-                            ? 'Своб.'
-                            : 'Занято';
+                            ? t('schedule.status.freeShort')
+                            : t('schedule.status.busy');
 
                       return (
                         <button
@@ -332,7 +334,7 @@ const ScheduleTimelineDesktop = ({
                           data-room-id={row.roomId}
                           data-slot-index={index}
                           data-cursor={isAvailable ? 'drag' : 'locked'}
-                          data-cursor-text={isAvailable ? 'DRAG' : undefined}
+                          data-cursor-text={isAvailable ? t('cursor.drag') : undefined}
                           {...bind(row.roomId, index)}
                           onKeyDown={(event) => onCellKeyDown(event, row.roomId, index)}
                           disabled={!isAvailable}
@@ -340,8 +342,19 @@ const ScheduleTimelineDesktop = ({
                             reducedMotion ? '' : 'hover:scale-[0.985]'
                           }`}
                           style={{touchAction: 'none', userSelect: 'none'}}
-                          aria-label={`${row.roomName} ${times[index]} ${isAvailable ? 'свободно' : 'занято'}`}
-                          title={`${times[index]} • ${isPast ? 'Прошло' : isAvailable ? 'Свободно' : 'Занято'}`}
+                          aria-label={t('schedule.slotAria', {
+                            room: row.roomName,
+                            time: times[index],
+                            status: isAvailable ? t('schedule.status.free') : t('schedule.status.busy'),
+                          })}
+                          title={t('schedule.slotTitle', {
+                            time: times[index],
+                            status: isPast
+                              ? t('schedule.status.past')
+                              : isAvailable
+                                ? t('schedule.status.free')
+                                : t('schedule.status.busy'),
+                          })}
                         >
                           {showCueHandles && (
                             <>

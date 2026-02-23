@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
 import {Link, useNavigate, useSearch} from '@tanstack/react-router';
 import {useForm} from 'react-hook-form';
@@ -11,12 +11,10 @@ import {loginUser} from '../services/api';
 import {getApiErrorMessage} from '../lib/httpError';
 import {motionPreset} from '../lib/motion';
 
-const loginSchema = z.object({
-  email: z.string().email('Введите корректный email.'),
-  password: z.string().min(8, 'Минимальная длина пароля — 8 символов.'),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
 
 const sanitizeRedirect = (value?: string): string | null => {
   if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('://')) {
@@ -36,6 +34,14 @@ const sanitizeRedirect = (value?: string): string | null => {
 
 const LoginPage: React.FC = () => {
   const {t} = useTranslation();
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t('auth.validation.email')),
+        password: z.string().min(8, t('auth.validation.passwordMin')),
+      }),
+    [t]
+  );
   const reducedMotion = useReducedMotion();
   const [error, setError] = useState<string | null>(null);
   const auth = useAuth();
@@ -67,7 +73,7 @@ const LoginPage: React.FC = () => {
       }
     } catch (err: unknown) {
       console.error('Login failed:', err);
-      setError(getApiErrorMessage(err, 'Неверный email или пароль.'));
+      setError(getApiErrorMessage(err, t('auth.loginError')));
     }
   };
 
@@ -92,14 +98,14 @@ const LoginPage: React.FC = () => {
       />
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/75 to-transparent" />
       <div className="relative">
-        <p className="rf-meta m-0 text-[11px] text-muted-foreground">RoomFlow access</p>
+        <p className="rf-meta m-0 text-[11px] text-muted-foreground">{t('auth.loginMeta')}</p>
         <h1 className="rf-display mb-6 mt-2 text-3xl font-bold">{t('auth.loginTitle')}</h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="relative space-y-4">
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            Email
+            {t('auth.email')}
           </label>
           <input
             id="email"

@@ -1,5 +1,6 @@
 import {MAX_BOOKING_HOURS, SLOT_INTERVAL_MINUTES, WORKING_DAY_END, WORKING_DAY_START} from './bookingConstants';
 import {isContiguousSlots, sortSlots, timeToMinutes} from './timeSlots';
+import i18n from '../../../i18n';
 
 interface ValidationOptions {
   daySlots: string[];
@@ -25,37 +26,37 @@ export const validateSlotRange = (
   }: ValidationOptions
 ): SlotRangeValidationResult => {
   if (range.length === 0) {
-    return {ok: false, reason: 'Выберите хотя бы один слот.'};
+    return {ok: false, reason: i18n.t('booking.validation.selectAtLeastOne')};
   }
 
   const sortedRange = sortSlots(range);
   const uniqueRange = [...new Set(sortedRange)];
 
   if (uniqueRange.length !== sortedRange.length) {
-    return {ok: false, reason: 'Слоты не должны повторяться.'};
+    return {ok: false, reason: i18n.t('booking.validation.noDuplicates')};
   }
 
   if (!isContiguousSlots(uniqueRange)) {
-    return {ok: false, reason: 'Слоты должны идти подряд.'};
+    return {ok: false, reason: i18n.t('booking.validation.contiguous')};
   }
 
   const daySet = new Set(daySlots);
   if (uniqueRange.some((slot) => !daySet.has(slot))) {
-    return {ok: false, reason: 'Выбран слот вне рабочего расписания.'};
+    return {ok: false, reason: i18n.t('booking.validation.outOfSchedule')};
   }
 
   if (uniqueRange.some((slot) => timeToMinutes(slot) < timeToMinutes(workingDayStart))) {
-    return {ok: false, reason: 'Слот начинается раньше рабочего дня.'};
+    return {ok: false, reason: i18n.t('booking.validation.beforeWorkingDay')};
   }
 
   if (uniqueRange.some((slot) => !availableSlots.has(slot))) {
-    return {ok: false, reason: 'Один из слотов уже занят.'};
+    return {ok: false, reason: i18n.t('booking.validation.alreadyBusy')};
   }
 
   const anchor = uniqueRange[0];
   const anchorIndex = daySlots.indexOf(anchor);
   if (anchorIndex === -1) {
-    return {ok: false, reason: 'Стартовый слот недоступен.'};
+    return {ok: false, reason: i18n.t('booking.validation.anchorUnavailable')};
   }
 
   const workEndLimit = timeToMinutes(workingDayEnd) - SLOT_INTERVAL_MINUTES;
@@ -67,7 +68,7 @@ export const validateSlotRange = (
     }
   }
   if (dayEndIndex === -1 || dayEndIndex < anchorIndex) {
-    return {ok: false, reason: 'Выбран слот за пределами рабочего дня.'};
+    return {ok: false, reason: i18n.t('booking.validation.outOfWorkingDay')};
   }
 
   let continuousAvailableCount = 0;
@@ -84,7 +85,7 @@ export const validateSlotRange = (
   const durationLimitMinutes = Math.min(maxHours * 60, continuousAvailableMinutes);
 
   if (rangeMinutes > durationLimitMinutes) {
-    return {ok: false, reason: 'Диапазон превышает доступный лимит.'};
+    return {ok: false, reason: i18n.t('booking.validation.exceedsLimit')};
   }
 
   return {ok: true};

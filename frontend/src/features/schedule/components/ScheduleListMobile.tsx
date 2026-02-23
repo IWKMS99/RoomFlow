@@ -1,4 +1,5 @@
 import {useMemo, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import type {ScheduleRoomVm, ScheduleViewModel} from '../lib/scheduleViewModel';
 import type {DirectSelectionRange} from '../hooks/useDirectBookingSelection';
 import {minutesToTime, timeToMinutes} from '../../booking/lib/timeSlots';
@@ -19,6 +20,7 @@ interface RoomRow {
 }
 
 const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectionClear}: Props) => {
+  const {t} = useTranslation();
   const [draft, setDraft] = useState<{roomId: string; slotIndex: number} | null>(null);
 
   const times = useMemo(() => model.slots.map((slot) => slot.time), [model.slots]);
@@ -118,11 +120,11 @@ const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectio
   return (
     <div className="space-y-3">
       <p className="m-0 text-xs text-muted-foreground">
-        Выберите начало и конец встречи в нужной комнате.
+        {t('schedule.mobile.selectRangeHint')}
       </p>
       {draft && (
         <p className="m-0 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs text-primary">
-          Начало диапазона выбрано. Нажмите конечный слот в этой же комнате.
+          {t('schedule.mobile.rangeStartSelectedHint')}
         </p>
       )}
 
@@ -130,7 +132,7 @@ const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectio
         <article key={row.roomId} className="rounded-2xl border border-white/16 bg-card/62 p-3 shadow-soft">
           <div className="mb-2">
             <p className="m-0 text-sm font-semibold text-foreground">{row.roomName}</p>
-            <p className="m-0 text-xs text-muted-foreground">{row.capacity} мест • Этаж {row.floor}</p>
+            <p className="m-0 text-xs text-muted-foreground">{t('schedule.roomMeta', {capacity: row.capacity, floor: row.floor})}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
@@ -191,7 +193,7 @@ const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectio
                 >
                   <p className="m-0 text-[11px] font-semibold">{times[index]}</p>
                   <p className="m-0 text-[10px] text-muted-foreground">
-                    {isPast ? 'Прошло' : isAvailable ? 'Свободно' : 'Занято'}
+                    {isPast ? t('schedule.status.past') : isAvailable ? t('schedule.status.free') : t('schedule.status.busy')}
                   </p>
                 </button>
               );

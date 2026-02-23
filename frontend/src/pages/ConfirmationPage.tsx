@@ -20,7 +20,7 @@ const formatConfirmationTime = (startIso: string, endIso: string, locale: string
 };
 
 const ConfirmationPage: React.FC = () => {
-  const {i18n} = useTranslation();
+  const {i18n, t} = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
@@ -34,7 +34,7 @@ const ConfirmationPage: React.FC = () => {
   }, [state, navigate]);
 
   if (!state?.bookingDetails) {
-    return <p className="text-sm text-muted-foreground">Проверка данных о бронировании...</p>;
+    return <p className="text-sm text-muted-foreground">{t('confirmation.loading')}</p>;
   }
 
   const {bookingDetails, roomName} = state;
@@ -46,21 +46,21 @@ const ConfirmationPage: React.FC = () => {
           <CalendarCheck2 size={26} />
         </div>
 
-        <p className="rf-meta m-0 text-[11px] text-muted-foreground">Booking complete</p>
-        <h1 className="rf-display m-0 mt-2 text-3xl font-bold">Бронирование подтверждено</h1>
-        <p className="mb-0 mt-2 text-sm text-muted-foreground">Вы получите напоминание за 30 минут до начала.</p>
+        <p className="rf-meta m-0 text-[11px] text-muted-foreground">{t('confirmation.meta')}</p>
+        <h1 className="rf-display m-0 mt-2 text-3xl font-bold">{t('confirmation.title')}</h1>
+        <p className="mb-0 mt-2 text-sm text-muted-foreground">{t('confirmation.subtitle')}</p>
 
         <div className="my-6 space-y-2 rounded-2xl border border-white/14 bg-white/6 p-4 text-left">
           <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
-            <span>Помещение</span>
+            <span>{t('confirmation.labels.room')}</span>
             <strong className="text-foreground">{roomName}</strong>
           </p>
           <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
-            <span>Дата</span>
+            <span>{t('confirmation.labels.date')}</span>
             <strong className="text-foreground">{formatConfirmationDate(bookingDetails.startTime, locale)}</strong>
           </p>
           <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
-            <span>Время</span>
+            <span>{t('confirmation.labels.time')}</span>
             <strong className="rf-tabular text-foreground">
               {formatConfirmationTime(bookingDetails.startTime, bookingDetails.endTime, locale)}
             </strong>
@@ -70,12 +70,12 @@ const ConfirmationPage: React.FC = () => {
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link to="/schedule" className="flex-1">
             <NeonButton className="w-full" size="lg">
-              Журнал занятости
+              {t('confirmation.actions.schedule')}
             </NeonButton>
           </Link>
           <Link to="/my-bookings" className="flex-1">
             <NeonButton variant="secondary" className="w-full" size="lg">
-              Мои брони
+              {t('confirmation.actions.myBookings')}
             </NeonButton>
           </Link>
         </div>

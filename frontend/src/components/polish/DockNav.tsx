@@ -37,10 +37,10 @@ const getDockCursorMode = (route: string): 'view' | 'book' | 'admin' => {
   return 'view';
 };
 
-const getDockCursorText = (route: string): string => {
-  if (route.startsWith('/admin')) return 'ADMIN';
-  if (route.startsWith('/my-bookings')) return 'BOOKINGS';
-  return 'SCHEDULE';
+const getDockCursorText = (route: string, t: (key: string) => string): string => {
+  if (route.startsWith('/admin')) return t('cursor.admin');
+  if (route.startsWith('/my-bookings')) return t('cursor.bookings');
+  return t('cursor.schedule');
 };
 
 const isRouteActive = (currentPath: string, route: string) => {
@@ -59,6 +59,7 @@ const DockItemButton = ({
   isActive: boolean;
   onRouteHover?: (route: string) => void;
 }) => {
+  const {t} = useTranslation();
   const reducedMotion = useReducedMotion();
   const isCoarsePointer = useMediaQuery('(pointer: coarse)');
   const mouseX = useMotionValue(-1000);
@@ -85,7 +86,7 @@ const DockItemButton = ({
       <Link
         to={item.to}
         data-cursor={getDockCursorMode(item.to)}
-        data-cursor-text={getDockCursorText(item.to)}
+        data-cursor-text={getDockCursorText(item.to, t)}
         className={cn(
           `${itemBase} overflow-hidden`,
           isActive
@@ -197,12 +198,12 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
   };
 
   return (
-    <motion.nav
+      <motion.nav
         initial={reducedMotion ? false : {y: 26, opacity: 0}}
         animate={reducedMotion ? undefined : {y: 0, opacity: 1}}
         transition={motionPreset.springGentle}
         className="pointer-events-auto fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-dock px-3"
-        aria-label="Основная навигация"
+        aria-label={t('nav.mainAria')}
       >
         <motion.div
           layout
@@ -222,7 +223,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             }}
             title={t('nav.lang')}
             data-cursor="view"
-            data-cursor-text="LANG"
+            data-cursor-text={t('cursor.lang')}
             className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
             aria-label={t('nav.lang')}
           >
@@ -233,7 +234,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             onClick={(event) => onToggleTheme({x: event.clientX, y: event.clientY})}
             title={t('nav.theme')}
             data-cursor="view"
-            data-cursor-text="THEME"
+            data-cursor-text={t('cursor.theme')}
             className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
             aria-label={t('nav.theme')}
           >
@@ -250,7 +251,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
                     title={userEmail}
                     aria-label={t('nav.profile')}
                     data-cursor="view"
-                    data-cursor-text="PROFILE"
+                    data-cursor-text={t('cursor.profile')}
                     className={cn(itemBase + ' overflow-hidden', 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
                   >
                     <motion.span
@@ -269,7 +270,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             <MagneticButton
               onClick={() => navigate({to: '/login'})}
               data-cursor="view"
-              data-cursor-text="LOGIN"
+              data-cursor-text={t('cursor.login')}
               className={cn(itemBase, 'border-primary/42 bg-primary/22 text-foreground hover:bg-primary/32')}
             >
               <LogIn size={15} />
@@ -325,9 +326,9 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
                   type="button"
                   onClick={() => setIsAccountMenuOpen(false)}
                   data-cursor="view"
-                  data-cursor-text="CLOSE"
+                  data-cursor-text={t('cursor.close')}
                   className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
-                  aria-label="Закрыть профиль"
+                  aria-label={t('nav.closeProfileAria')}
                 >
                   <X size={14} />
                 </button>
@@ -338,7 +339,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             <button
               type="button"
               data-cursor="book"
-              data-cursor-text="BOOKINGS"
+              data-cursor-text={t('cursor.bookings')}
               className="relative flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
               onClick={() => {
                 setIsAccountMenuOpen(false);
@@ -352,7 +353,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
               <button
                 type="button"
                 data-cursor="admin"
-                data-cursor-text="ADMIN"
+                data-cursor-text={t('cursor.admin')}
                 className="relative mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
                 onClick={() => {
                   setIsAccountMenuOpen(false);
@@ -366,7 +367,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             <button
               type="button"
               data-cursor="locked"
-              data-cursor-text="LOGOUT"
+              data-cursor-text={t('cursor.logout')}
               className="relative mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-danger/14 hover:text-danger"
               onClick={() => {
                 setIsAccountMenuOpen(false);
