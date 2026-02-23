@@ -1,164 +1,47 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import styles from './MyBookingsPage.module.css';
-import {cancelBooking, getMyBookings} from '../services/api';
-import type {BookingResponse, BookingStatus} from '../types/booking';
-import BookingCardSkeleton from "../components/BookingCardSkeleton.tsx";
-import toast from "react-hot-toast";
-
-const formatBookingDate = (isoString: string): string => {
-    return new Date(isoString).toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-};
-
-const formatBookingTime = (startIso: string, endIso: string): string => {
-    const startTime = new Date(startIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
-    const endTime = new Date(endIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
-    return `${startTime}-${endTime}`;
-};
-
-const statusMap: Record<BookingStatus, { text: string; className: string }> = {
-    CONFIRMED: {text: 'Активно', className: styles.активно},
-    REQUESTED: {text: 'Ожидает', className: styles.ожидает},
-    COMPLETED: {text: 'Завершено', className: styles.завершено},
-    CANCELLED: {text: 'Отменено', className: styles.отменено},
-};
-
+import React from 'react';
+import {Link} from 'react-router-dom';
+import {useMyBookingsQuery} from '../services/hooks/useMyBookingsQuery';
+import {useAuth} from '../context/useAuth';
 
 const MyBookingsPage: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
-    const [bookings, setBookings] = useState<BookingResponse[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+  const {isAuthenticated} = useAuth();
+  const bookings = useMyBookingsQuery(isAuthenticated);
 
-    useEffect(() => {
-        const loadBookings = async () => {
-            try {
-                setIsLoading(true);
-                const data = await getMyBookings();
-                data.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
-                setBookings(data);
-            } catch (err) {
-                console.error("Failed to fetch bookings:", err);
-                setError("Не удалось загрузить список бронирований.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadBookings();
-    }, []);
+  return (
+    <section className="mx-auto max-w-4xl space-y-4 pb-8">
+      <h1 className="rf-display text-3xl font-bold">Мои бронирования</h1>
+      <p className="text-sm text-muted-foreground">
+        Этот экран временно работает в fallback-режиме. Spatial-версия будет в следующей итерации.
+      </p>
 
-    const handleCancelBooking = async (bookingId: string) => {
-        const promise = cancelBooking(bookingId);
+      {bookings.isLoading && <p className="text-sm text-muted-foreground">Загрузка...</p>}
+      {bookings.isError && (
+        <p className="text-sm text-danger">
+          Не удалось загрузить данные. <button type="button" className="underline" onClick={() => void bookings.refetch()}>Повторить</button>
+        </p>
+      )}
 
-        toast.promise(
-            promise,
-            {
-                loading: 'Отменяем бронирование...',
-                success: () => {
-                    setBookings(prevBookings =>
-                        prevBookings.map(b =>
-                            b.id === bookingId ? {...b, status: 'CANCELLED'} : b
-                        )
-                    );
-                    return 'Бронирование успешно отменено!';
-                },
-                error: (err) => {
-                    console.error("Failed to cancel booking:", err);
-                    return err.response?.data?.message || "Не удалось отменить бронирование.";
-                },
-            }
-        );
-    };
+      {!bookings.isLoading && !bookings.isError && (bookings.data ?? []).length === 0 && (
+        <p className="text-sm text-muted-foreground">Активных бронирований нет.</p>
+      )}
 
-    const {activeBookings, historyBookings} = useMemo(() => {
-        const now = new Date();
-        const active: BookingResponse[] = [];
-        const history: BookingResponse[] = [];
-
-        bookings.forEach(b => {
-            const isPast = new Date(b.endTime) < now;
-            if (b.status === 'CONFIRMED' && !isPast) {
-                active.push(b);
-            } else {
-                history.push(b);
-            }
-        });
-
-        return {activeBookings: active, historyBookings: history};
-    }, [bookings]);
-
-    const renderBookingCard = (booking: BookingResponse) => {
-        const displayStatus = statusMap[booking.status] || {text: booking.status, className: ''};
-        const isCancellable = booking.status === 'CONFIRMED' && new Date(booking.startTime) > new Date();
-
-        return (
-            <div key={booking.id} className={styles.bookingCard}>
-                <div className={styles.cardTop}>
-                    <div>
-                        <p className={styles.roomName}>{booking.roomName}</p>
-                        <p className={styles.roomMeta}>{booking.capacity} мест • Этаж {booking.floor}</p>
-                        <p className={styles.dateTime}>
-                            {formatBookingDate(booking.startTime)} • {formatBookingTime(booking.startTime, booking.endTime)}
-                        </p>
-                    </div>
-                    <div className={`${styles.statusBadge} ${displayStatus.className}`}>
-                        {displayStatus.text}
-                    </div>
-                </div>
-                {isCancellable && (
-                    <div className={styles.cardActions}>
-                        <button className={`${styles.actionButton} ${styles.cancelButton}`}
-                                onClick={() => handleCancelBooking(booking.id)}>
-                            Отменить
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const displayedBookings = activeTab === 'active' ? activeBookings : historyBookings;
-
-    return (
-        <div className={styles.pageContainer}>
-            <h1>Мои бронирования</h1>
-            <div className={styles.tabs}>
-                <button
-                    className={`${styles.tab} ${activeTab === 'active' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('active')}
-                >
-                    Активные ({activeBookings.length})
-                </button>
-                <button
-                    className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('history')}
-                >
-                    История ({historyBookings.length})
-                </button>
-            </div>
-
-            <div className={styles.bookingsList}>
-                {isLoading ? (
-                    <>
-                        <BookingCardSkeleton />
-                        <BookingCardSkeleton />
-                        <BookingCardSkeleton />
-                    </>
-                ) : (
-                    <>
-                        {error && <p style={{ color: 'var(--red-cancel)' }}>{error}</p>}
-                        {!error && displayedBookings.length === 0 && (
-                            <p>У вас нет {activeTab === 'active' ? 'активных бронирований' : 'бронирований в истории'}.</p>
-                        )}
-                        {!error && displayedBookings.map(renderBookingCard)}
-                    </>
-                )}
-            </div>
+      {!bookings.isLoading && !bookings.isError && (bookings.data ?? []).length > 0 && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {(bookings.data ?? []).map((booking) => (
+            <article key={booking.id} className="rounded-xl border border-white/16 bg-card/70 p-4">
+              <p className="m-0 text-base font-semibold text-foreground">{booking.roomName}</p>
+              <p className="m-0 mt-1 text-sm text-muted-foreground">
+                {new Date(booking.startTime).toLocaleDateString('ru-RU')} • {new Date(booking.startTime).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
+              </p>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">Статус: {booking.status}</p>
+            </article>
+          ))}
         </div>
-    );
+      )}
+
+      <Link to="/schedule" className="text-sm text-primary underline">Вернуться в Spatial Schedule</Link>
+    </section>
+  );
 };
 
 export default MyBookingsPage;

@@ -1,108 +1,78 @@
 import React from 'react';
-import {NavLink, Outlet, useNavigate} from 'react-router-dom';
-import styles from './Layout.module.css';
-import {useAuth} from '../context/AuthContext.tsx';
-import {Toaster} from "react-hot-toast";
-
-const ListIcon = () => <span>📋</span>;
-const CalendarIcon = () => <span>📅</span>;
-const LogoutIcon = () => <span>🚪</span>;
-const RulesIcon = () => <span>💡</span>;
-const AdminIcon = () => <span>🛠️</span>;
+import {Toaster} from 'react-hot-toast';
+import {Outlet, useLocation, useNavigate} from 'react-router-dom';
+import {motion} from 'framer-motion';
+import {useAuth} from '../context/useAuth';
+import {useRouteSceneSync} from '../hooks/useRouteSceneSync';
+import {useHubStore} from '../store/useHubStore';
+import HubLayer from '../layers/HubLayer/HubLayer';
+import OverlayLayer from '../layers/OverlayLayer/OverlayLayer';
+import NavigationLayer from '../layers/NavigationLayer/NavigationLayer';
 
 const Layout: React.FC = () => {
-    const {isAuthenticated, isAdmin, user, logout, isLoading} = useAuth();
-    const navigate = useNavigate();
+  const {isLoading, token} = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    const handleLogout = async () => {
-        await logout();
-        navigate('/login');
+  useRouteSceneSync();
+
+  React.useEffect(() => {
+    document.documentElement.classList.remove('light');
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
     };
+  }, []);
 
-    if (isLoading) {
-        return <div>Загрузка приложения...</div>;
+  React.useEffect(() => {
+    if (!token && (location.pathname.startsWith('/my-bookings') || location.pathname.startsWith('/admin'))) {
+      useHubStore.getState().resetToGlobal();
+      navigate('/login', {replace: true, state: {from: location}});
     }
+  }, [location, navigate, token]);
 
-    return (
-        <div className={styles.layoutContainer}>
-            <Toaster
-                position="bottom-right"
-                toastOptions={{
-                    style: {
-                        background: 'var(--bg-card)',
-                        color: 'var(--text-primary)',
-                    },
-                }}
-            />
-            <aside className={styles.sidebar}>
-                <div className={styles.logo}>RoomFlow</div>
-                <nav className={styles.nav}>
-                    {isAuthenticated ? (
-                        <>
-                            <NavLink to="/booking/new" className={`${styles.navLink} ${styles.primary}`}>
-                                <p className={styles.title}>Забронировать</p>
-                            </NavLink>
-                            <NavLink to="/my-bookings"
-                                     className={({isActive}) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
-                                <ListIcon/> Мои бронирования
-                            </NavLink>
-                            <NavLink to="/schedule"
-                                     className={({isActive}) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
-                                <CalendarIcon/> Журнал занятости
-                            </NavLink>
-                            {isAdmin && (
-                                <NavLink to="/admin"
-                                         className={({isActive}) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
-                                    <AdminIcon/> Админ-панель
-                                </NavLink>
-                            )}
-                        </>
-                    ) : (
-                        <NavLink to="/schedule"
-                                 className={({isActive}) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
-                            <CalendarIcon/> Журнал занятости
-                        </NavLink>
-                    )}
-                </nav>
+  if (isLoading) {
+    return null;
+  }
 
-                <div className={styles.sidebarFooter}>
-                    <div className={styles.rulesBox}>
-                        <div className={styles.rulesIcon}><RulesIcon/></div>
-                        <div className={styles.rulesContent}>
-                            <h4>Правила бронирования</h4>
-                            <ul>
-                                <li>Время работы: с 9:00 до 18:00.</li>
-                                <li>Бронирование возможно только на будущее время.</li>
-                                <li>Отмена бронирования доступна до его начала.</li>
-                            </ul>
-                        </div>
-                    </div>
+  const isDetailView =
+    location.pathname.includes('/room/') ||
+    location.pathname.includes('/my-bookings') ||
+    location.pathname.includes('/admin');
 
-                    {isAuthenticated ? (
-                        <div className={styles.userInfo}>
-                            <p className={styles.userEmail} title={user?.email}>{user?.email}</p>
-                            <button onClick={handleLogout} className={styles.logoutButton}>
-                                <LogoutIcon/> Выйти
-                            </button>
-                        </div>
-                    ) : (
-                        <div className={styles.authButtons}>
-                            <p className={styles.authHint}>Чтобы бронировать комнаты, войдите в аккаунт</p>
-                            <NavLink to="/login" className={`${styles.authLink} ${styles.authPrimary}`}>
-                                Войти
-                            </NavLink>
-                            <NavLink to="/register" className={styles.authLink}>
-                                Регистрация
-                            </NavLink>
-                        </div>
-                    )}
-                </div>
-            </aside>
-            <main className={styles.mainContent}>
-                <Outlet/>
-            </main>
+  return (
+    <div className="relative h-screen w-screen overflow-hidden bg-background text-foreground selection:bg-primary/30">
+      <Toaster position="top-right" />
+
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black" />
+      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+
+      <motion.div
+        className="relative z-10 h-full w-full"
+        animate={{
+          scale: isDetailView ? 0.95 : 1,
+          filter: isDetailView ? 'blur(10px) brightness(0.7)' : 'blur(0px) brightness(1)',
+          opacity: isDetailView ? 0.5 : 1,
+        }}
+        transition={{duration: 0.4, ease: [0.32, 0.72, 0, 1]}}
+      >
+        <HubLayer />
+      </motion.div>
+
+      <OverlayLayer />
+      <NavigationLayer />
+
+      {!location.pathname.startsWith('/schedule') && (
+        <div className="fixed inset-0 z-50 overflow-auto px-4 py-20">
+          <div className="mx-auto max-w-6xl">
+            <Outlet />
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default Layout;
