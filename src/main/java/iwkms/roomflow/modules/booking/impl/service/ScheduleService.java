@@ -43,9 +43,9 @@ public class ScheduleService {
         List<TimeSlotViewDto> timeSlots = new ArrayList<>();
         for (LocalTime slotTime = WORKING_DAY_START;
                 slotTime.isBefore(WORKING_DAY_END);
-                slotTime = slotTime.plusHours(1)) {
+                slotTime = slotTime.plusMinutes(30)) {
             final LocalDateTime currentSlotStart = date.atTime(slotTime);
-            final LocalDateTime currentSlotEnd = currentSlotStart.plusHours(1);
+            final LocalDateTime currentSlotEnd = currentSlotStart.plusMinutes(30);
 
             List<RoomInScheduleViewDto> roomStatuses = allRooms.stream()
                     .map(room -> {
