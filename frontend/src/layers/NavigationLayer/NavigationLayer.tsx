@@ -5,7 +5,7 @@ import LagCursor from '../../components/motion/LagCursor';
 import {useAuth} from '../../context/useAuth';
 import {useHubStore} from '../../store/useHubStore';
 import {queryKeys} from '../../services/queryKeys';
-import {fetchSchedule, getMyBookings, getAdminUsers, getAdminBookings} from '../../services/api';
+import {fetchSchedule, getMyBookings, getAdminUsers, getAdminBookings, getAdminRooms} from '../../services/api';
 import type {ThemeMode} from '../../hooks/useTheme';
 
 interface Props {
@@ -49,6 +49,11 @@ const NavigationLayer = ({theme, onToggleTheme}: Props) => {
           staleTime: 15_000,
         });
       }
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.adminRooms({page: 0, size: 10, sort: 'name,asc'}),
+        queryFn: () => getAdminRooms({page: 0, size: 10, sort: 'name,asc'}),
+        staleTime: 15_000,
+      });
     }
   };
 

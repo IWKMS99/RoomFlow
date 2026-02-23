@@ -1,6 +1,6 @@
 import {AnimatePresence, motion, useReducedMotion} from 'framer-motion';
 import {Check, ChevronDown, Shield} from 'lucide-react';
-import {useNavigate} from '@tanstack/react-router';
+import {useNavigate, useSearch} from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import React from 'react';
 import {useTranslation} from 'react-i18next';
@@ -9,31 +9,47 @@ import {useAdminUsersQuery} from '../../../services/hooks/useAdminUsersQuery';
 import {useUpdateUserRoleMutation} from '../../../services/hooks/useUpdateUserRoleMutation';
 import {useAdminBookingsQuery} from '../../../services/hooks/useAdminBookingsQuery';
 import {useCancelAdminBookingMutation} from '../../../services/hooks/useCancelAdminBookingMutation';
+import {useAdminRoomsQuery} from '../../../services/hooks/useAdminRoomsQuery';
+import {useCreateAdminRoomMutation} from '../../../services/hooks/useCreateAdminRoomMutation';
+import {useUpdateAdminRoomMutation} from '../../../services/hooks/useUpdateAdminRoomMutation';
+import {useDeleteAdminRoomMutation} from '../../../services/hooks/useDeleteAdminRoomMutation';
 import MagneticButton from '../../../components/motion/MagneticButton';
 import {getApiErrorMessage} from '../../../lib/httpError';
 import {motionTokens} from '../../../lib/motionTokens';
 import {formatDateForApi, normalizeDate} from '../../../lib/datetime/dateKey';
 import type {BookingStatus} from '../../../types/booking';
+import type {AdminRoom} from '../../../types/adminRooms';
+import RoomFormModal from './RoomFormModal';
+import RoomFileManager from './RoomFileManager';
+import NumberStepperInput from '../../../components/ui/NumberStepperInput';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const STATUS_OPTIONS: Array<{value: BookingStatus | ''; label: string}> = [
-  {value: '', label: 'Все статусы'},
-  {value: 'CONFIRMED', label: 'CONFIRMED'},
-  {value: 'CANCELLED', label: 'CANCELLED'},
-  {value: 'REQUESTED', label: 'REQUESTED'},
-  {value: 'COMPLETED', label: 'COMPLETED'},
-];
+type AdminTab = 'rooms' | 'users' | 'bookings';
 
 const AdminOverlay = () => {
-  const {i18n} = useTranslation();
+  const {i18n, t} = useTranslation();
   const navigate = useNavigate();
+  const adminSearchRaw = useSearch({from: '/app-layout/admin', shouldThrow: false});
+  const adminSearch = adminSearchRaw ?? {};
   const reducedMotion = useReducedMotion();
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
   const cameraPose = useHubStore((state) => state.cameraPose);
   const selectedDateKey = useHubStore((state) => state.selectedDateKey) || formatDateForApi(normalizeDate(new Date()));
+  const [activeTab, setActiveTab] = React.useState<AdminTab>('rooms');
+
   const usersQuery = useAdminUsersQuery();
   const updateRole = useUpdateUserRoleMutation();
   const [statusFilter, setStatusFilter] = React.useState<BookingStatus | ''>('');
+  const statusOptions = React.useMemo<Array<{value: BookingStatus | ''; label: string}>>(
+    () => [
+      {value: '', label: t('admin.bookings.status.all')},
+      {value: 'CONFIRMED', label: t('admin.bookings.status.confirmed')},
+      {value: 'CANCELLED', label: t('admin.bookings.status.cancelled')},
+      {value: 'REQUESTED', label: t('admin.bookings.status.requested')},
+      {value: 'COMPLETED', label: t('admin.bookings.status.completed')},
+    ],
+    [t]
+  );
   const [isStatusMenuOpen, setIsStatusMenuOpen] = React.useState(false);
   const [roomIdFilter, setRoomIdFilter] = React.useState('');
   const [emailFilter, setEmailFilter] = React.useState('');
@@ -66,22 +82,104 @@ const AdminOverlay = () => {
     );
   }, [adminBookingsQuery.data, normalizedRoomFilter, roomIdQueryParam]);
 
+  const page = adminSearch.page ?? 1;
+  const size = adminSearch.size ?? 10;
+  const sort = adminSearch.sort ?? 'name,asc';
+  const roomFilters = React.useMemo(
+    () => ({
+      page: Math.max(1, page),
+      size,
+      search: adminSearch.search?.trim() || undefined,
+      floor: adminSearch.floor,
+      minCapacity: adminSearch.minCapacity,
+      sort,
+    }),
+    [adminSearch.floor, adminSearch.minCapacity, adminSearch.search, page, size, sort]
+  );
+
+  const roomsQuery = useAdminRoomsQuery({
+    ...roomFilters,
+    page: roomFilters.page - 1,
+  });
+  const createRoomMutation = useCreateAdminRoomMutation();
+  const updateRoomMutation = useUpdateAdminRoomMutation();
+  const deleteRoomMutation = useDeleteAdminRoomMutation();
+
+  const [isRoomModalOpen, setIsRoomModalOpen] = React.useState(false);
+  const [editingRoom, setEditingRoom] = React.useState<AdminRoom | null>(null);
+  const [roomFormError, setRoomFormError] = React.useState<string | undefined>(undefined);
+  const [expandedRoomId, setExpandedRoomId] = React.useState<string | null>(null);
+
+  const setAdminSearch = React.useCallback(
+    (patch: Partial<{page: number; size: number; search: string | undefined; floor: number | undefined; minCapacity: number | undefined; sort: string}>) => {
+      navigate({
+        to: '/admin',
+        search: (prev) => ({
+          ...prev,
+          ...patch,
+        }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
   const handleRoleToggle = async (userId: string, role: 'ROLE_USER' | 'ROLE_ADMIN') => {
     try {
       await updateRole.mutateAsync({userId, role});
-      toast.success('Роль пользователя обновлена.');
+      toast.success(t('admin.toast.userRoleUpdated'));
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Не удалось обновить роль пользователя.'));
+      toast.error(getApiErrorMessage(error, t('admin.toast.userRoleUpdateError')));
     }
   };
 
   const handleAdminCancel = async (bookingId: string) => {
     try {
       await cancelAdminBookingMutation.mutateAsync(bookingId);
-      toast.success('Бронирование отменено администратором.');
+      toast.success(t('admin.toast.bookingCancelled'));
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Не удалось отменить бронирование.'));
+      toast.error(getApiErrorMessage(error, t('admin.toast.bookingCancelError')));
     }
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    if (!window.confirm(t('admin.rooms.confirmDelete'))) {
+      return;
+    }
+
+    try {
+      await deleteRoomMutation.mutateAsync(roomId);
+      toast.success(t('admin.toast.roomDeleted'));
+      if (expandedRoomId === roomId) {
+        setExpandedRoomId(null);
+      }
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, t('admin.toast.roomDeleteError')));
+    }
+  };
+
+  const handleRoomSubmit = async (values: {name: string; floor: number; capacity: number}) => {
+    setRoomFormError(undefined);
+    try {
+      if (editingRoom) {
+        await updateRoomMutation.mutateAsync({roomId: editingRoom.id, payload: values});
+        toast.success(t('admin.toast.roomUpdated'));
+      } else {
+        await createRoomMutation.mutateAsync(values);
+        toast.success(t('admin.toast.roomCreated'));
+      }
+      setIsRoomModalOpen(false);
+      setEditingRoom(null);
+    } catch (error: unknown) {
+      setRoomFormError(getApiErrorMessage(error, t('admin.toast.roomSaveError')));
+    }
+  };
+
+  const [sortField, sortDir] = sort.split(',');
+
+  const toggleSort = (field: 'name' | 'capacity') => {
+    const nextDir = sortField === field && sortDir === 'asc' ? 'desc' : 'asc';
+    setAdminSearch({sort: `${field},${nextDir}`, page: 1});
   };
 
   React.useEffect(() => {
@@ -110,7 +208,7 @@ const AdminOverlay = () => {
     };
   }, [isStatusMenuOpen]);
 
-  const selectedStatusLabel = STATUS_OPTIONS.find((option) => option.value === statusFilter)?.label ?? 'Все статусы';
+  const selectedStatusLabel = statusOptions.find((option) => option.value === statusFilter)?.label ?? t('admin.bookings.status.all');
 
   return (
     <motion.div
@@ -124,11 +222,11 @@ const AdminOverlay = () => {
       <motion.div
         layoutId="admin-panel"
         transition={motionTokens.card}
-        className="rf-modal flex max-h-[calc(100dvh-8.5rem)] w-full max-w-5xl flex-col rounded-3xl p-4 sm:p-6"
+        className="rf-modal relative flex max-h-[calc(100dvh-8.5rem)] w-full max-w-6xl flex-col rounded-3xl p-4 sm:p-6"
       >
         <div className="mb-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 text-2xl font-bold text-foreground">
-            <Shield size={22} /> Админ-панель
+            <Shield size={22} /> {t('admin.title')}
           </div>
           <MagneticButton
             onClick={() => {
@@ -136,49 +234,232 @@ const AdminOverlay = () => {
               navigate({to: '/schedule'});
             }}
             data-cursor="view"
-            data-cursor-text="BACK"
+            data-cursor-text={t('cursor.back')}
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground"
           >
-            Закрыть
+            {t('admin.close')}
           </MagneticButton>
         </div>
 
-        <div className="grid min-h-0 gap-6 lg:grid-cols-2">
+        <div className="mb-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('rooms')}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${activeTab === 'rooms' ? 'bg-primary/30 text-foreground' : 'bg-background/40 text-muted-foreground'}`}
+          >
+            {t('admin.tabs.rooms')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('users')}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${activeTab === 'users' ? 'bg-primary/30 text-foreground' : 'bg-background/40 text-muted-foreground'}`}
+          >
+            {t('admin.tabs.users')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('bookings')}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${activeTab === 'bookings' ? 'bg-primary/30 text-foreground' : 'bg-background/40 text-muted-foreground'}`}
+          >
+            {t('admin.tabs.bookings')}
+          </button>
+        </div>
+
+        {activeTab === 'rooms' && (
+          <section className="min-h-0 flex-1 overflow-auto rf-scrollbar">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+              <div className="grid flex-1 gap-2 sm:grid-cols-3">
+                <input
+                  type="text"
+                  placeholder={t('admin.rooms.search')}
+                  value={adminSearch.search ?? ''}
+                  onChange={(event) => setAdminSearch({search: event.target.value || undefined, page: 1})}
+                  className="rounded-lg border border-white/16 bg-background/40 px-3 py-2 text-xs text-foreground"
+                />
+                <NumberStepperInput
+                  min={1}
+                  placeholder={t('admin.rooms.floor')}
+                  value={adminSearch.floor}
+                  onValueChange={(next) => setAdminSearch({floor: next, page: 1})}
+                />
+                <NumberStepperInput
+                  min={1}
+                  placeholder={t('admin.rooms.minCapacity')}
+                  value={adminSearch.minCapacity}
+                  onValueChange={(next) => setAdminSearch({minCapacity: next, page: 1})}
+                />
+              </div>
+              <button
+                type="button"
+                className="rounded-lg border border-primary/45 bg-primary/25 px-3 py-2 text-xs font-semibold text-foreground"
+                onClick={() => {
+                  setEditingRoom(null);
+                  setRoomFormError(undefined);
+                  setIsRoomModalOpen(true);
+                }}
+              >
+                {t('admin.rooms.create')}
+              </button>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-white/14">
+              <table className="w-full text-left text-xs text-foreground">
+                <thead className="bg-background/45">
+                  <tr>
+                    <th className="px-3 py-2">
+                      <button type="button" className="font-semibold" onClick={() => toggleSort('name')}>
+                        {t('admin.rooms.columns.name')}
+                      </button>
+                    </th>
+                    <th className="px-3 py-2">{t('admin.rooms.columns.floor')}</th>
+                    <th className="px-3 py-2">
+                      <button type="button" className="font-semibold" onClick={() => toggleSort('capacity')}>
+                        {t('admin.rooms.columns.capacity')}
+                      </button>
+                    </th>
+                    <th className="px-3 py-2">{t('admin.rooms.columns.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roomsQuery.isLoading ? (
+                    <tr>
+                      <td className="px-3 py-3 text-muted-foreground" colSpan={4}>
+                        {t('admin.rooms.loading')}
+                      </td>
+                    </tr>
+                  ) : roomsQuery.isError ? (
+                    <tr>
+                      <td className="px-3 py-3 text-danger" colSpan={4}>
+                        {t('admin.rooms.error')}
+                      </td>
+                    </tr>
+                  ) : (roomsQuery.data?.content ?? []).length === 0 ? (
+                    <tr>
+                      <td className="px-3 py-3 text-muted-foreground" colSpan={4}>
+                        {t('admin.rooms.empty')}
+                      </td>
+                    </tr>
+                  ) : (
+                    roomsQuery.data?.content.map((room) => (
+                      <React.Fragment key={room.id}>
+                        <tr className="border-t border-white/10">
+                          <td className="px-3 py-2">{room.name}</td>
+                          <td className="px-3 py-2">{room.floor}</td>
+                          <td className="px-3 py-2">{room.capacity}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                className="rounded-md border border-white/20 px-2 py-1"
+                                onClick={() => {
+                                  setEditingRoom(room);
+                                  setRoomFormError(undefined);
+                                  setIsRoomModalOpen(true);
+                                }}
+                              >
+                                {t('admin.rooms.edit')}
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded-md border border-danger/45 bg-danger/20 px-2 py-1 text-danger"
+                                onClick={() => void handleDeleteRoom(room.id)}
+                                disabled={deleteRoomMutation.isPending}
+                              >
+                                {t('admin.rooms.delete')}
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded-md border border-primary/45 bg-primary/20 px-2 py-1"
+                                onClick={() => setExpandedRoomId((current) => (current === room.id ? null : room.id))}
+                              >
+                                {t('admin.rooms.files')}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedRoomId === room.id && (
+                          <tr className="border-t border-white/10">
+                            <td className="px-3 py-2" colSpan={4}>
+                              <RoomFileManager roomId={room.id} />
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>
+                {t('admin.rooms.pagination.page')} {page} / {Math.max(roomsQuery.data?.totalPages ?? 1, 1)}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-md border border-white/20 px-2 py-1"
+                  disabled={page <= 1}
+                  onClick={() => setAdminSearch({page: Math.max(1, page - 1)})}
+                >
+                  {t('admin.rooms.pagination.prev')}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-white/20 px-2 py-1"
+                  disabled={page >= Math.max(roomsQuery.data?.totalPages ?? 1, 1)}
+                  onClick={() => setAdminSearch({page: page + 1})}
+                >
+                  {t('admin.rooms.pagination.next')}
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'users' && (
           <section className="grid min-h-0 gap-2">
-            <h3 className="m-0 text-lg font-semibold text-foreground">Пользователи</h3>
+            <h3 className="m-0 text-lg font-semibold text-foreground">{t('admin.users.title')}</h3>
             {usersQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Загрузка пользователей...</p>
+              <p className="text-sm text-muted-foreground">{t('admin.users.loading')}</p>
             ) : usersQuery.isError ? (
               <div className="text-sm text-danger">
-                Не удалось загрузить список.
+                {t('admin.users.error')}
                 <button
                   type="button"
                   className="ml-2 underline"
                   data-cursor="admin"
-                  data-cursor-text="RETRY"
+                  data-cursor-text={t('cursor.retry')}
                   onClick={() => void usersQuery.refetch()}
                 >
-                  Повторить
+                  {t('admin.retry')}
                 </button>
               </div>
             ) : (usersQuery.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Список пользователей пуст.</p>
+              <p className="text-sm text-muted-foreground">{t('admin.users.empty')}</p>
             ) : (
               <div className="grid min-h-0 content-start gap-2 overflow-auto pr-1 rf-scrollbar">
                 {(usersQuery.data ?? []).map((user) => {
                   const isAdmin = user.roles.includes('ROLE_ADMIN');
                   const nextRole = isAdmin ? 'ROLE_USER' : 'ROLE_ADMIN';
                   return (
-                    <div key={user.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/14 bg-card/60 px-3 py-2">
+                    <div
+                      key={user.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/14 bg-card/60 px-3 py-2"
+                    >
                       <p className="m-0 text-sm text-foreground">{user.email}</p>
                       <MagneticButton
                         onClick={() => void handleRoleToggle(user.id, nextRole)}
                         disabled={updateRole.isPending}
                         data-cursor={updateRole.isPending ? 'locked' : 'admin'}
-                        data-cursor-text={updateRole.isPending ? undefined : 'ROLE'}
+                        data-cursor-text={updateRole.isPending ? undefined : t('cursor.role')}
                         className="rounded-lg border border-primary/40 bg-primary/18 px-3 py-1.5 text-xs font-semibold text-foreground"
                       >
-                        {updateRole.isPending ? 'Сохраняем...' : nextRole === 'ROLE_ADMIN' ? 'Сделать админом' : 'Сделать пользователем'}
+                        {updateRole.isPending
+                          ? t('admin.users.saving')
+                          : nextRole === 'ROLE_ADMIN'
+                            ? t('admin.users.makeAdmin')
+                            : t('admin.users.makeUser')}
                       </MagneticButton>
                     </div>
                   );
@@ -186,21 +467,23 @@ const AdminOverlay = () => {
               </div>
             )}
           </section>
+        )}
 
+        {activeTab === 'bookings' && (
           <section className="flex min-h-0 flex-col gap-3">
-            <h3 className="m-0 text-lg font-semibold text-foreground">Все бронирования</h3>
+            <h3 className="m-0 text-lg font-semibold text-foreground">{t('admin.bookings.title')}</h3>
 
             <div className="grid gap-2 sm:grid-cols-3">
               <input
                 type="text"
-                placeholder="Фильтр email"
+                placeholder={t('admin.bookings.emailFilter')}
                 value={emailFilter}
                 onChange={(event) => setEmailFilter(event.target.value)}
                 className="rounded-lg border border-white/16 bg-background/40 px-3 py-2 text-xs text-foreground"
               />
               <input
                 type="text"
-                placeholder="Фильтр комнаты (UUID/название)"
+                placeholder={t('admin.bookings.roomFilter')}
                 value={roomIdFilter}
                 onChange={(event) => setRoomIdFilter(event.target.value)}
                 className="rounded-lg border border-white/16 bg-background/40 px-3 py-2 text-xs text-foreground"
@@ -209,14 +492,17 @@ const AdminOverlay = () => {
                 <button
                   type="button"
                   data-cursor="admin"
-                  data-cursor-text="STATUS"
+                  data-cursor-text={t('cursor.status')}
                   aria-haspopup="listbox"
                   aria-expanded={isStatusMenuOpen}
                   className="flex w-full items-center justify-between gap-2 rounded-full border border-white/22 bg-background/45 px-3 py-2 text-xs text-foreground transition hover:border-white/35 hover:bg-background/60"
                   onClick={() => setIsStatusMenuOpen((open) => !open)}
                 >
                   <span className="truncate">{selectedStatusLabel}</span>
-                  <ChevronDown size={14} className={isStatusMenuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                  <ChevronDown
+                    size={14}
+                    className={isStatusMenuOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
+                  />
                 </button>
 
                 <AnimatePresence>
@@ -230,7 +516,7 @@ const AdminOverlay = () => {
                       className="absolute right-0 z-dockMenu mt-2 w-full min-w-[190px] overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(150deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))] shadow-glow backdrop-blur-2xl"
                     >
                       <div className="max-h-56 overflow-y-auto p-1 rf-scrollbar">
-                        {STATUS_OPTIONS.map((option) => {
+                        {statusOptions.map((option) => {
                           const isActive = option.value === statusFilter;
                           return (
                             <button
@@ -239,7 +525,7 @@ const AdminOverlay = () => {
                               role="option"
                               aria-selected={isActive}
                               data-cursor="admin"
-                              data-cursor-text={isActive ? 'ACTIVE' : 'STATUS'}
+                              data-cursor-text={isActive ? t('cursor.active') : t('cursor.status')}
                               onClick={() => {
                                 setStatusFilter(option.value);
                                 setIsStatusMenuOpen(false);
@@ -264,40 +550,48 @@ const AdminOverlay = () => {
 
             <div className="min-h-0 flex-1 overflow-auto pr-1 rf-scrollbar">
               {adminBookingsQuery.isLoading ? (
-                <div className="flex min-h-[220px] items-start text-sm text-muted-foreground">Загрузка бронирований...</div>
+                <div className="flex min-h-[220px] items-start text-sm text-muted-foreground">{t('admin.bookings.loading')}</div>
               ) : adminBookingsQuery.isError ? (
                 <div className="min-h-[220px] text-sm text-danger">
-                  Не удалось загрузить бронирования.
+                  {t('admin.bookings.error')}
                   <button
                     type="button"
                     className="ml-2 underline"
                     data-cursor="admin"
-                    data-cursor-text="RETRY"
+                    data-cursor-text={t('cursor.retry')}
                     onClick={() => void adminBookingsQuery.refetch()}
                   >
-                    Повторить
+                    {t('admin.retry')}
                   </button>
                 </div>
               ) : visibleBookings.length === 0 ? (
-                <div className="min-h-[220px] text-sm text-muted-foreground">На выбранную дату бронирований не найдено.</div>
+                <div className="min-h-[220px] text-sm text-muted-foreground">{t('admin.bookings.empty')}</div>
               ) : (
                 <div className="space-y-2">
                   {visibleBookings.map((booking) => (
                     <article key={booking.id} className="rounded-xl border border-white/14 bg-card/60 px-3 py-2">
                       <p className="m-0 text-sm font-semibold text-foreground">{booking.roomName}</p>
                       <p className="m-0 mt-1 text-xs text-muted-foreground">
-                        {booking.userEmail} • {new Date(booking.startTime).toLocaleString(locale, {hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit'})}
+                        {booking.userEmail} •{' '}
+                        {new Date(booking.startTime).toLocaleString(locale, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: '2-digit',
+                        })}
                       </p>
-                      <p className="m-0 mt-1 text-xs text-muted-foreground">Статус: {booking.status}</p>
+                      <p className="m-0 mt-1 text-xs text-muted-foreground">
+                        {t('admin.bookings.statusLabel')}: {booking.status}
+                      </p>
                       {booking.status !== 'CANCELLED' && (
                         <MagneticButton
                           onClick={() => void handleAdminCancel(booking.id)}
                           disabled={cancelAdminBookingMutation.isPending}
                           data-cursor={cancelAdminBookingMutation.isPending ? 'locked' : 'danger'}
-                          data-cursor-text={cancelAdminBookingMutation.isPending ? undefined : 'CANCEL'}
+                          data-cursor-text={cancelAdminBookingMutation.isPending ? undefined : t('cursor.cancel')}
                           className="mt-2 rounded-lg border border-danger/45 bg-danger/20 px-3 py-1.5 text-xs font-semibold text-danger"
                         >
-                          {cancelAdminBookingMutation.isPending ? 'Отмена...' : 'Отменить'}
+                          {cancelAdminBookingMutation.isPending ? t('admin.bookings.cancelling') : t('admin.bookings.cancel')}
                         </MagneticButton>
                       )}
                     </article>
@@ -306,7 +600,29 @@ const AdminOverlay = () => {
               )}
             </div>
           </section>
-        </div>
+        )}
+
+        <RoomFormModal
+          isOpen={isRoomModalOpen}
+          mode={editingRoom ? 'edit' : 'create'}
+          initialValues={
+            editingRoom
+              ? {
+                  name: editingRoom.name,
+                  floor: editingRoom.floor,
+                  capacity: editingRoom.capacity,
+                }
+              : undefined
+          }
+          isPending={createRoomMutation.isPending || updateRoomMutation.isPending}
+          errorMessage={roomFormError}
+          onClose={() => {
+            setIsRoomModalOpen(false);
+            setEditingRoom(null);
+            setRoomFormError(undefined);
+          }}
+          onSubmit={handleRoomSubmit}
+        />
       </motion.div>
     </motion.div>
   );

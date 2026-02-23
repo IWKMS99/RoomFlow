@@ -21,6 +21,15 @@ const loginSearchSchema = z.object({
   redirect: z.string().optional(),
 });
 
+const adminSearchSchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  size: z.coerce.number().int().min(1).max(100).optional(),
+  search: z.string().optional(),
+  floor: z.coerce.number().int().min(1).optional(),
+  minCapacity: z.coerce.number().int().min(1).optional(),
+  sort: z.string().optional(),
+});
+
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
 });
@@ -115,6 +124,7 @@ const adminRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/admin',
   component: SceneRouteBridge,
+  validateSearch: (search) => adminSearchSchema.parse(search),
   beforeLoad: ({context, location}) => {
     requireAuthenticated({context, location});
 
