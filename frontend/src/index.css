@@ -122,6 +122,17 @@ body {
   overflow-x: hidden;
 }
 
+html.rf-lag-cursor-active,
+html.rf-lag-cursor-active * {
+  cursor: none !important;
+}
+
+html.rf-lag-cursor-active input,
+html.rf-lag-cursor-active textarea,
+html.rf-lag-cursor-active [contenteditable='true'] {
+  cursor: text !important;
+}
+
 body::before,
 body::after {
   content: '';

@@ -165,6 +165,8 @@ const RoomDetailOverlay = () => {
 
             <MagneticButton
               onClick={closeRoomDetail}
+              data-cursor="view"
+              data-cursor-text="BACK"
               className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground sm:w-auto"
             >
               <ArrowLeft size={15} /> Назад
@@ -231,6 +233,8 @@ const RoomDetailOverlay = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedRange(null)}
+                      data-cursor={!selectedRange || createMutation.isPending ? 'locked' : 'view'}
+                      data-cursor-text={!selectedRange || createMutation.isPending ? undefined : 'CLEAR'}
                       disabled={!selectedRange || createMutation.isPending}
                       className="w-1/2 rounded-xl border border-white/20 bg-white/8 px-3 py-2 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                     >
@@ -238,6 +242,8 @@ const RoomDetailOverlay = () => {
                     </button>
                     <MagneticButton
                       onClick={() => void handleBook()}
+                      data-cursor={!selectedRange || createMutation.isPending ? 'locked' : 'book'}
+                      data-cursor-text={!selectedRange || createMutation.isPending ? undefined : 'BOOK'}
                       disabled={!selectedRange || createMutation.isPending}
                       className="w-1/2 rounded-xl border border-primary/50 bg-primary/75 px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     >

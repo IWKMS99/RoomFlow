@@ -4,6 +4,8 @@ import {cn} from '../../lib/utils';
 
 interface MagneticButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   magneticStrength?: number;
+  'data-cursor'?: string;
+  'data-cursor-text'?: string;
 }
 
 const MagneticButton = ({
@@ -11,6 +13,8 @@ const MagneticButton = ({
   className,
   onMouseMove,
   onMouseLeave,
+  'data-cursor': dataCursor,
+  'data-cursor-text': dataCursorText,
   children,
   ...props
 }: MagneticButtonProps) => {
@@ -47,11 +51,16 @@ const MagneticButton = ({
     onMouseLeave?.(event);
   };
 
+  const cursorMode = dataCursor ?? (props.disabled ? 'locked' : 'view');
+  const cursorText = dataCursorText ?? undefined;
+
   return (
     <button
       ref={ref}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
+      data-cursor={cursorMode}
+      data-cursor-text={cursorText}
       className={cn('transition-[transform,border-radius] duration-200 will-change-transform', className)}
       {...props}
     >

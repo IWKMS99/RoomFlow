@@ -1,69 +1,252 @@
-import {motion, useMotionValue, useReducedMotion, useSpring} from 'framer-motion';
-import React from 'react';
+import {AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring} from 'framer-motion';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {useMediaQuery} from '../../hooks/useMediaQuery';
+import {cn} from '../../lib/utils';
 
-type CursorMode = 'default' | 'view' | 'drag';
+type CursorMode = 'default' | 'view' | 'book' | 'drag' | 'admin' | 'locked';
 
-const modeToLabel: Record<CursorMode, string> = {
-  default: '',
-  view: 'View',
-  drag: 'Drag',
+interface CursorState {
+  mode: CursorMode;
+  text: string;
+}
+
+const MODES = new Set<CursorMode>(['default', 'view', 'book', 'drag', 'admin', 'locked']);
+
+const IDLE_HIDE_MS = 1400;
+
+const readCursorState = (target: EventTarget | null): CursorState => {
+  const element = target instanceof HTMLElement ? target : null;
+  if (!element) {
+    return {mode: 'default', text: ''};
+  }
+
+  const explicit = element.closest<HTMLElement>('[data-cursor]');
+  if (explicit) {
+    const rawMode = explicit.dataset.cursor;
+    const text = explicit.dataset.cursorText ?? '';
+    const mode = rawMode && MODES.has(rawMode as CursorMode) ? (rawMode as CursorMode) : 'default';
+    return {mode, text};
+  }
+
+  if (element.closest('[data-slot-index][data-room-id], [draggable="true"], [data-drag]')) {
+    return {mode: 'drag', text: 'DRAG'};
+  }
+
+  if (element.closest('input, textarea, select, [contenteditable="true"]')) {
+    return {mode: 'locked', text: ''};
+  }
+
+  const actionElement = element.closest<HTMLElement>('button, a[href], [role="button"], summary, label');
+  if (actionElement) {
+    const isDisabled =
+      actionElement.matches(':disabled, [aria-disabled="true"]') ||
+      actionElement.getAttribute('disabled') !== null ||
+      actionElement.getAttribute('aria-disabled') === 'true';
+    return {mode: isDisabled ? 'locked' : 'view', text: ''};
+  }
+
+  return {mode: 'default', text: ''};
 };
 
 const LagCursor = () => {
   const isTouch = useMediaQuery('(pointer: coarse)');
   const reducedMotion = useReducedMotion();
-  const [mode, setMode] = React.useState<CursorMode>('default');
-  const [visible, setVisible] = React.useState(false);
+  const [cursorState, setCursorState] = useState<CursorState>({mode: 'default', text: ''});
+  const [isVisible, setIsVisible] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
 
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  const springX = useSpring(x, {stiffness: 300, damping: 28});
-  const springY = useSpring(y, {stiffness: 300, damping: 28});
+  const mouseX = useMotionValue(-100);
+  const mouseY = useMotionValue(-100);
 
-  React.useEffect(() => {
-    if (isTouch || reducedMotion) return;
+  const dotX = useSpring(mouseX, {stiffness: 900, damping: 56, mass: 0.32});
+  const dotY = useSpring(mouseY, {stiffness: 900, damping: 56, mass: 0.32});
+  const ringX = useSpring(mouseX, {stiffness: 220, damping: 24, mass: 0.7});
+  const ringY = useSpring(mouseY, {stiffness: 220, damping: 24, mass: 0.7});
+  const glowX = useSpring(mouseX, {stiffness: 110, damping: 20, mass: 1.15});
+  const glowY = useSpring(mouseY, {stiffness: 110, damping: 20, mass: 1.15});
 
-    const onMove = (event: MouseEvent) => {
-      setVisible(true);
-      x.set(event.clientX - 16);
-      y.set(event.clientY - 16);
+  const idleTimeoutRef = useRef<number | null>(null);
+  const cursorStateRef = useRef(cursorState);
+  const visibleRef = useRef(isVisible);
 
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('[data-cursor="view"]')) {
-        setMode('view');
-      } else if (target?.closest('[data-cursor="drag"]')) {
-        setMode('drag');
-      } else {
-        setMode('default');
+  useEffect(() => {
+    cursorStateRef.current = cursorState;
+  }, [cursorState]);
+
+  useEffect(() => {
+    visibleRef.current = isVisible;
+  }, [isVisible]);
+
+  const ringVariants = useMemo(
+    () => ({
+      default: {width: 30, height: 30, borderRadius: '999px', rotate: 0},
+      view: {width: 62, height: 62, borderRadius: '999px', rotate: 0},
+      book: {width: 112, height: 40, borderRadius: '14px', rotate: 0},
+      admin: {width: 48, height: 48, borderRadius: '12px', rotate: 12},
+      drag: {width: 78, height: 78, borderRadius: '999px', rotate: 0},
+      locked: {width: 24, height: 24, borderRadius: '999px', rotate: 0},
+    }),
+    []
+  );
+
+  useEffect(() => {
+    if (isTouch || reducedMotion) {
+      document.documentElement.classList.remove('rf-lag-cursor-active');
+      return;
+    }
+
+    document.documentElement.classList.add('rf-lag-cursor-active');
+
+    const clearIdle = () => {
+      if (idleTimeoutRef.current !== null) {
+        window.clearTimeout(idleTimeoutRef.current);
+        idleTimeoutRef.current = null;
       }
     };
 
-    const onLeave = () => setVisible(false);
+    const scheduleIdleHide = () => {
+      clearIdle();
+      idleTimeoutRef.current = window.setTimeout(() => {
+        setIsVisible(false);
+      }, IDLE_HIDE_MS);
+    };
 
-    window.addEventListener('mousemove', onMove, {passive: true});
-    document.addEventListener('mouseleave', onLeave);
+    const handleMove = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== 'mouse') {
+        return;
+      }
+
+      mouseX.set(event.clientX);
+      mouseY.set(event.clientY);
+      if (!visibleRef.current) {
+        setIsVisible(true);
+        visibleRef.current = true;
+      }
+
+      const next = readCursorState(event.target);
+      const prev = cursorStateRef.current;
+      if (next.mode !== prev.mode || next.text !== prev.text) {
+        setCursorState(next);
+      }
+
+      scheduleIdleHide();
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== 'mouse') {
+        return;
+      }
+      setIsPressed(true);
+    };
+
+    const handlePointerUp = () => setIsPressed(false);
+
+    const handleWindowBlur = () => {
+      setIsPressed(false);
+      setIsVisible(false);
+    };
+
+    const handleMouseOut = (event: MouseEvent) => {
+      if (!event.relatedTarget) {
+        setIsPressed(false);
+        setIsVisible(false);
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState !== 'visible') {
+        setIsVisible(false);
+        setIsPressed(false);
+      }
+    };
+
+    window.addEventListener('pointermove', handleMove, {passive: true});
+    window.addEventListener('pointerdown', handlePointerDown, {passive: true});
+    window.addEventListener('pointerup', handlePointerUp, {passive: true});
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('mouseout', handleMouseOut);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    scheduleIdleHide();
 
     return () => {
-      window.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseleave', onLeave);
+      clearIdle();
+      document.documentElement.classList.remove('rf-lag-cursor-active');
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('mouseout', handleMouseOut);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [isTouch, reducedMotion, x, y]);
+  }, [isTouch, reducedMotion, mouseX, mouseY]);
 
   if (isTouch || reducedMotion) {
     return null;
   }
 
+  const mode = cursorState.mode;
+  const text = cursorState.text;
+
   return (
-    <motion.div
-      style={{x: springX, y: springY}}
-      animate={{opacity: visible ? 1 : 0, scale: mode === 'default' ? 1 : 1.2}}
-      transition={{type: 'spring', stiffness: 260, damping: 22}}
-      className="pointer-events-none fixed left-0 top-0 z-cursor flex h-8 w-8 items-center justify-center rounded-full border border-primary/45 bg-primary/18 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground backdrop-blur"
-      aria-hidden
-    >
-      {modeToLabel[mode]}
-    </motion.div>
+    <div className="pointer-events-none fixed inset-0 z-cursor select-none">
+      <motion.div
+        style={{x: glowX, y: glowY, translateX: '-50%', translateY: '-50%'}}
+        animate={{
+          opacity: isVisible ? (mode === 'default' ? 0.2 : 0.34) : 0,
+          scale: isPressed ? 0.86 : 1,
+        }}
+        transition={{duration: 0.18, ease: 'easeOut'}}
+        className="absolute h-28 w-28 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.28)_0%,hsl(var(--primary)/0.06)_36%,transparent_72%)] blur-md"
+      />
+
+      <motion.div
+        style={{x: ringX, y: ringY, translateX: '-50%', translateY: '-50%'}}
+        animate={{
+          opacity: isVisible ? 1 : 0,
+          scale: isPressed ? 0.92 : 1,
+          ...ringVariants[mode],
+        }}
+        transition={{type: 'spring', stiffness: 360, damping: 30, mass: 0.4}}
+        className={cn(
+          'absolute flex items-center justify-center border text-[10px] font-semibold tracking-[0.12em] backdrop-blur-[2px]',
+          mode === 'default' && 'border-primary/35 bg-primary/5',
+          mode === 'view' && 'border-primary/55 bg-primary/12 text-primary-foreground/90',
+          mode === 'book' && 'border-success/55 bg-success/16 text-foreground',
+          mode === 'drag' && 'border-primary/60 bg-primary/14 text-foreground',
+          mode === 'admin' && 'border-warning/55 bg-warning/18 text-foreground',
+          mode === 'locked' && 'border-white/35 bg-white/8 text-muted-foreground'
+        )}
+      >
+        <AnimatePresence mode="wait">
+          {(text || mode !== 'default') && (
+            <motion.span
+              key={`${mode}-${text}`}
+              initial={{opacity: 0, y: 4, scale: 0.94}}
+              animate={{opacity: 1, y: 0, scale: 1}}
+              exit={{opacity: 0, y: -4, scale: 0.9}}
+              transition={{duration: 0.14}}
+              className="rf-meta pointer-events-none whitespace-nowrap"
+            >
+              {text || (mode === 'book' ? 'BOOK' : mode === 'drag' ? 'DRAG' : mode === 'admin' ? 'ADMIN' : mode === 'locked' ? 'LOCK' : 'OPEN')}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      <motion.div
+        style={{x: dotX, y: dotY, translateX: '-50%', translateY: '-50%'}}
+        animate={{
+          opacity: isVisible ? 1 : 0,
+          scale: mode === 'locked' ? 0.45 : isPressed ? 0.72 : 1,
+        }}
+        transition={{type: 'spring', stiffness: 700, damping: 40}}
+        className={cn(
+          'absolute rounded-full shadow-[0_0_16px_hsl(var(--primary)/0.95)]',
+          mode === 'book' ? 'h-2.5 w-2.5 bg-success' : 'h-2 w-2 bg-primary'
+        )}
+      />
+    </div>
   );
 };
 

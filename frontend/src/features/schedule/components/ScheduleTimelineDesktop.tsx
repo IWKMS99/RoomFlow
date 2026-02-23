@@ -331,6 +331,8 @@ const ScheduleTimelineDesktop = ({
                           type="button"
                           data-room-id={row.roomId}
                           data-slot-index={index}
+                          data-cursor={isAvailable ? 'drag' : 'locked'}
+                          data-cursor-text={isAvailable ? 'DRAG' : undefined}
                           {...bind(row.roomId, index)}
                           onKeyDown={(event) => onCellKeyDown(event, row.roomId, index)}
                           disabled={!isAvailable}
