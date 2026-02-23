@@ -2,6 +2,7 @@ import React from 'react';
 import {motion} from 'framer-motion';
 import {useNavigate} from '@tanstack/react-router';
 import {useTranslation} from 'react-i18next';
+import {Users, Layers, ImageIcon} from 'lucide-react';
 import {formatDateForApi, normalizeDate, parseDateKey} from '../../lib/datetime/dateKey';
 import {useHubStore} from '../../store/useHubStore';
 import {useScheduleQuery} from '../../services/hooks/useScheduleQuery';
@@ -39,6 +40,7 @@ const HubLayer = () => {
             roomName: room.roomName,
             floor: room.floor,
             capacity: room.capacity,
+            coverImageUrl: room.coverImageUrl, // Исправление здесь!
             availableSlots: 0,
           });
         }
@@ -91,11 +93,11 @@ const HubLayer = () => {
               navigate({to: '/schedule/room/$roomId', params: {roomId: room.roomId}});
             }}
             whileHover={{y: -4}}
-            whileTap={{scale: 0.995}}
-            className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-card/38 p-6 shadow-[inset_0_1px_0_hsl(var(--text-hi)/0.12),0_22px_54px_-34px_hsl(var(--shadow-depth)/0.94)] backdrop-blur-[20px] transition-colors hover:border-primary/40 hover:bg-card/56"
+            whileTap={{scale: 0.985}}
+            className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-card/40 p-2 shadow-soft backdrop-blur-3xl transition-colors hover:border-primary/30 hover:bg-card/60"
           >
-            {room.coverImageUrl && !brokenImageRooms[room.roomId] && (
-              <>
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[1.5rem] bg-white/5">
+              {room.coverImageUrl && !brokenImageRooms[room.roomId] ? (
                 <motion.img
                   src={room.coverImageUrl}
                   alt={`${room.roomName} ${t('room.imageAlt')}`}
@@ -105,37 +107,57 @@ const HubLayer = () => {
                   animate={{opacity: 1}}
                   transition={{duration: 0.22, ease: 'easeOut'}}
                   onError={() => setBrokenImageRooms((state) => ({...state, [room.roomId]: true}))}
-                  className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-t from-background/90 via-background/60 to-background/20" />
-              </>
-            )}
-            <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_1px_20px_hsl(var(--glow-2)/0.1)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="relative z-10 mb-4 flex items-start justify-between">
-              <div className="rf-tabular rounded-full border border-white/10 bg-background/24 px-3 py-1 text-xs font-medium text-muted-foreground">
-                {room.floor} этаж
-              </div>
-              {room.availableSlots > 0 ? (
-                <span className="flex h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_10px_3px_rgba(16,185,129,0.42)]" />
               ) : (
-                <span className="flex h-2.5 w-2.5 animate-pulse rounded-full bg-red-500/95 shadow-[0_0_10px_2px_rgba(239,68,68,0.32)]" />
+                <div className="flex h-full w-full flex-col items-center justify-center text-muted-foreground opacity-50">
+                  <ImageIcon size={32} className="mb-2" />
+                  <span className="text-xs">{t('room.imageUnavailable')}</span>
+                </div>
               )}
+              
+              <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-background/70 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur-md shadow-lg">
+                {room.availableSlots > 0 ? (
+                  <>
+                    <span className="flex h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                    {t('schedule.status.free')}
+                  </>
+                ) : (
+                  <>
+                    <span className="flex h-2 w-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]" />
+                    {t('schedule.status.busy')}
+                  </>
+                )}
+              </div>
             </div>
 
-            <motion.h3
-              layoutId={`room-title-${room.roomId}`}
-              transition={motionTokens.card}
-              className="relative z-10 text-xl font-bold text-foreground transition-colors group-hover:text-primary"
-            >
-              {room.roomName}
-            </motion.h3>
+            <div className="flex flex-1 flex-col justify-between px-3 pb-3 pt-4">
+              <div>
+                <motion.h3
+                  layoutId={`room-title-${room.roomId}`}
+                  transition={motionTokens.card}
+                  className="text-xl font-bold text-foreground transition-colors group-hover:text-primary"
+                >
+                  {room.roomName}
+                </motion.h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {room.availableSlots > 0 ? (
+                    <span className="font-medium text-emerald-400/90">{room.availableSlots} слотов доступно</span>
+                  ) : (
+                    <span className="font-medium text-red-400/90">Нет свободных слотов</span>
+                  )}
+                </p>
+              </div>
 
-            <div className="relative z-10 mt-2 flex items-center justify-between text-sm text-muted-foreground">
-              <span className="rf-tabular">{room.capacity} человек</span>
-              <span className={`rf-tabular ${room.availableSlots > 0 ? 'text-emerald-400' : 'text-red-400'}`}>{room.availableSlots} слотов</span>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors group-hover:bg-white/10">
+                  <Users size={14} className="text-primary/70" /> {room.capacity}
+                </span>
+                <span className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors group-hover:bg-white/10">
+                  <Layers size={14} className="text-primary/70" /> {room.floor} этаж
+                </span>
+              </div>
             </div>
-
-            <div className="absolute -inset-px -z-decor rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
           </motion.div>
         ))}
       </div>
