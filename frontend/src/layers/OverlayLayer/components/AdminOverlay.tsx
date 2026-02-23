@@ -128,7 +128,7 @@ const AdminOverlay = () => {
       >
         <div className="mb-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 text-2xl font-bold text-foreground">
-            <Shield size={22} /> God Mode
+            <Shield size={22} /> Админ-панель
           </div>
           <MagneticButton
             onClick={() => {

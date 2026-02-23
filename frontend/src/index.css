@@ -258,6 +258,15 @@ h3,
   background: hsl(var(--accent-cyan) / 0.72);
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .rf-glass {
   background:
     linear-gradient(140deg, hsl(var(--surface-glass-1)), hsl(var(--surface-glass-2))),

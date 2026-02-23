@@ -1,26 +1,24 @@
 import React from 'react';
 import {motion} from 'framer-motion';
 import {useNavigate} from 'react-router-dom';
-import {DayPicker} from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
 import {useTranslation} from 'react-i18next';
-import {formatDateForApi, formatDateForDisplay, normalizeDate, parseDateKey} from '../../lib/datetime/dateKey';
+import {formatDateForApi, normalizeDate, parseDateKey} from '../../lib/datetime/dateKey';
 import {useHubStore} from '../../store/useHubStore';
 import {useScheduleQuery} from '../../services/hooks/useScheduleQuery';
 import type {ScheduleRoomVm} from '../../features/schedule/lib/scheduleViewModel';
 import {motionTokens} from '../../lib/motionTokens';
+import DateNavigator from '../../features/schedule/components/DateNavigator';
 
 interface RoomSummary extends Omit<ScheduleRoomVm, 'isPast' | 'isAvailable'> {
   availableSlots: number;
 }
 
 const HubLayer = () => {
-  const {t, i18n} = useTranslation();
+  const {t} = useTranslation();
   const navigate = useNavigate();
   const selectedDateKey = useHubStore((state) => state.selectedDateKey) || formatDateForApi(normalizeDate(new Date()));
   const setSelectedDateKey = useHubStore((state) => state.setSelectedDateKey);
   const selectedDate = parseDateKey(selectedDateKey);
-  const [calendarOpen, setCalendarOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!useHubStore.getState().selectedDateKey) {
@@ -69,37 +67,13 @@ const HubLayer = () => {
 
   return (
     <div className="h-full w-full overflow-y-auto p-6 md:p-12">
-      <div className="mx-auto mb-10 flex max-w-7xl flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <div className="mx-auto mb-10 flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">{t('hub.title')}</h1>
           <p className="mt-2 text-lg text-muted-foreground">{t('hub.subtitle')}</p>
         </div>
 
-        <div className="relative flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setCalendarOpen((current) => !current)}
-            className="rounded-lg border border-white/14 bg-background/40 px-4 py-2 text-sm font-medium text-foreground shadow-sm backdrop-blur-md transition hover:bg-background/56"
-          >
-            {formatDateForDisplay(selectedDate, i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
-          </button>
-
-          {calendarOpen && (
-            <div className="absolute right-0 top-12 z-popover rounded-xl border border-white/14 bg-card/95 p-3 shadow-2xl backdrop-blur-md">
-              <DayPicker
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  if (!date) return;
-                  setSelectedDateKey(formatDateForApi(normalizeDate(date)));
-                  setCalendarOpen(false);
-                }}
-                disabled={{before: normalizeDate(new Date())}}
-                className="text-foreground"
-              />
-            </div>
-          )}
-        </div>
+        <DateNavigator selectedDate={selectedDate} onSelect={(date) => setSelectedDateKey(formatDateForApi(date))} />
       </div>
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
