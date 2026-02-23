@@ -133,7 +133,7 @@ const ScheduleListMobile = ({model, selectedRange, onSelectionCommit, onSelectio
             <p className="m-0 text-xs text-muted-foreground">{row.capacity} мест • Этаж {row.floor}</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {row.cells.map((cell, index) => {
               const isPast = Boolean(cell?.isPast);
               const isAvailable = Boolean(cell && cell.isAvailable && !cell.isPast);

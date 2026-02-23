@@ -196,7 +196,10 @@ const ScheduleTimelineDesktop = ({
     return null;
   }
 
-  const columns = compact ? `152px repeat(${times.length}, 36px)` : `176px repeat(${times.length}, minmax(0, 1fr))`;
+  const roomColumnWidth = compact ? 156 : 184;
+  const slotColumnWidth = compact ? 44 : 54;
+  const minGridWidth = roomColumnWidth + times.length * slotColumnWidth;
+  const columns = `${roomColumnWidth}px repeat(${times.length}, minmax(${slotColumnWidth}px, 1fr))`;
 
   const onCellKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, roomId: string, slotIndex: number) => {
     if (event.key === 'Enter') {
@@ -242,9 +245,9 @@ const ScheduleTimelineDesktop = ({
       </div>
 
       <div
-        className={`rounded-3xl border border-white/16 bg-card/45 shadow-trench ${compact ? 'overflow-x-auto rf-scrollbar' : 'overflow-x-hidden'}`}
+        className="w-full max-w-full overflow-x-auto rounded-3xl border border-white/16 bg-card/45 shadow-trench rf-scrollbar"
       >
-        <div className={compact ? 'min-w-[820px]' : 'w-full'}>
+        <div style={{minWidth: `${minGridWidth}px`}}>
           <div className="grid" style={{gridTemplateColumns: columns}}>
             <div className="sticky left-0 z-20 border-b border-r border-white/14 bg-card/85 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground backdrop-blur">
               Переговорки
@@ -253,7 +256,7 @@ const ScheduleTimelineDesktop = ({
             {times.map((time) => (
               <div
                 key={`header-${time}`}
-                className="border-b border-r border-white/5 bg-card/78 px-2 py-3 text-center text-[11px] font-semibold text-muted-foreground"
+                className="border-b border-r border-white/5 bg-card/78 px-2 py-3 text-center text-xs font-semibold text-muted-foreground"
               >
                 {time}
               </div>
@@ -306,7 +309,7 @@ const ScheduleTimelineDesktop = ({
                       const showCueHandles = isAvailable && !inActiveRange;
 
                       const baseClass =
-                        'group relative z-[2] h-12 whitespace-nowrap border-r border-white/5 px-1.5 text-center text-[10px] font-semibold text-muted-foreground transition';
+                        'group relative z-[2] h-14 whitespace-nowrap border-r border-white/5 px-1.5 text-center text-[10px] font-semibold text-muted-foreground transition';
 
                       const stateClass = isAvailable
                         ? 'bg-transparent text-foreground hover:bg-primary/[0.08]'

@@ -15,6 +15,8 @@ import {motionTokens} from '../../../lib/motionTokens';
 import {formatDateForApi, normalizeDate} from '../../../lib/datetime/dateKey';
 import type {BookingStatus} from '../../../types/booking';
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const AdminOverlay = () => {
   const {i18n} = useTranslation();
   const navigate = useNavigate();
@@ -27,19 +29,33 @@ const AdminOverlay = () => {
   const [statusFilter, setStatusFilter] = React.useState<BookingStatus | ''>('');
   const [roomIdFilter, setRoomIdFilter] = React.useState('');
   const [emailFilter, setEmailFilter] = React.useState('');
+  const normalizedRoomFilter = roomIdFilter.trim();
+  const roomIdQueryParam = UUID_PATTERN.test(normalizedRoomFilter) ? normalizedRoomFilter : undefined;
 
   const bookingFilters = React.useMemo(
     () => ({
       date: selectedDateKey,
-      roomId: roomIdFilter.trim() || undefined,
+      roomId: roomIdQueryParam,
       userEmail: emailFilter.trim() || undefined,
       status: statusFilter || undefined,
     }),
-    [emailFilter, roomIdFilter, selectedDateKey, statusFilter]
+    [emailFilter, roomIdQueryParam, selectedDateKey, statusFilter]
   );
 
   const adminBookingsQuery = useAdminBookingsQuery(bookingFilters);
   const cancelAdminBookingMutation = useCancelAdminBookingMutation(bookingFilters);
+  const visibleBookings = React.useMemo(() => {
+    const bookings = adminBookingsQuery.data ?? [];
+    if (!normalizedRoomFilter || roomIdQueryParam) {
+      return bookings;
+    }
+
+    const normalized = normalizedRoomFilter.toLowerCase();
+    return bookings.filter(
+      (booking) =>
+        booking.roomName.toLowerCase().includes(normalized) || booking.roomId.toLowerCase().includes(normalized)
+    );
+  }, [adminBookingsQuery.data, normalizedRoomFilter, roomIdQueryParam]);
 
   const handleRoleToggle = async (userId: string, role: 'ROLE_USER' | 'ROLE_ADMIN') => {
     try {
@@ -136,7 +152,7 @@ const AdminOverlay = () => {
               />
               <input
                 type="text"
-                placeholder="Фильтр roomId"
+                placeholder="Фильтр комнаты (UUID/название)"
                 value={roomIdFilter}
                 onChange={(event) => setRoomIdFilter(event.target.value)}
                 className="rounded-lg border border-white/16 bg-background/40 px-3 py-2 text-xs text-foreground"
@@ -163,11 +179,11 @@ const AdminOverlay = () => {
                   Повторить
                 </button>
               </div>
-            ) : (adminBookingsQuery.data ?? []).length === 0 ? (
+            ) : visibleBookings.length === 0 ? (
               <p className="text-sm text-muted-foreground">На выбранную дату бронирований не найдено.</p>
             ) : (
               <div className="min-h-0 flex-1 space-y-2 overflow-auto pr-1 rf-scrollbar">
-                {(adminBookingsQuery.data ?? []).map((booking) => (
+                {visibleBookings.map((booking) => (
                   <article key={booking.id} className="rounded-xl border border-white/14 bg-card/60 px-3 py-2">
                     <p className="m-0 text-sm font-semibold text-foreground">{booking.roomName}</p>
                     <p className="m-0 mt-1 text-xs text-muted-foreground">

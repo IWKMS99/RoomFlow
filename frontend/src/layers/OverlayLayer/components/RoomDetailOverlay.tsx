@@ -58,6 +58,8 @@ const RoomDetailOverlay = () => {
     };
   }, [roomModel.slots]);
 
+  const updatedSecondsAgo = Math.max(0, Math.floor((nowTs - schedule.dataUpdatedAt) / 1000));
+
   React.useEffect(() => {
     if (roomId && activeRoomId !== roomId) {
       useHubStore.getState().enterRoom(roomId);
@@ -131,7 +133,7 @@ const RoomDetailOverlay = () => {
       <motion.div
         layoutId={`room-card-${roomId}`}
         transition={{type: 'spring', stiffness: 280, damping: 24}}
-        className="rf-modal relative max-h-[calc(100dvh-8.5rem)] w-full max-w-6xl overflow-y-auto rounded-3xl p-4 sm:p-6 rf-scrollbar"
+        className="rf-modal relative flex max-h-[calc(100dvh-8.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl p-3 sm:p-5 lg:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <motion.div
@@ -140,32 +142,42 @@ const RoomDetailOverlay = () => {
           variants={{visible: {transition: {staggerChildren: 0.1}}, hidden: {}}}
           className="grid gap-4"
         >
-          <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}} className="mb-1 flex items-start justify-between gap-3">
-            <div>
-              <p className="rf-meta m-0 text-[11px] text-muted-foreground">Room Detail</p>
-              <motion.h2 layoutId={`room-title-${roomId}`} transition={motionTokens.card} className="m-0 mt-1 text-2xl font-bold text-foreground">
+          <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}} className="mb-1 flex flex-col gap-3 rounded-2xl border border-white/10 bg-background/35 p-3 sm:p-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <p className="rf-meta m-0 text-[11px] text-muted-foreground">Детали комнаты</p>
+              <motion.h2 layoutId={`room-title-${roomId}`} transition={motionTokens.card} className="m-0 mt-1 truncate text-xl font-bold text-foreground sm:text-2xl">
                 {roomMeta?.roomName ?? 'Комната'}
               </motion.h2>
               {roomMeta && (
-                <p className="rf-tabular m-0 mt-1 text-sm text-muted-foreground">
-                  {roomMeta.capacity} мест • Этаж {roomMeta.floor}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="rf-tabular rounded-lg border border-white/15 bg-background/45 px-2 py-1 text-xs text-muted-foreground">
+                    {roomMeta.capacity} мест
+                  </span>
+                  <span className="rf-tabular rounded-lg border border-white/15 bg-background/45 px-2 py-1 text-xs text-muted-foreground">
+                    Этаж {roomMeta.floor}
+                  </span>
+                  <span className="rf-tabular rounded-lg border border-white/15 bg-background/45 px-2 py-1 text-xs text-muted-foreground">
+                    {selectedDateKey}
+                  </span>
+                </div>
               )}
             </div>
 
             <MagneticButton
               onClick={closeRoomDetail}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground"
+              className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground sm:w-auto"
             >
               <ArrowLeft size={15} /> Назад
             </MagneticButton>
           </motion.div>
 
           {schedule.isLoading ? (
-            <p className="text-sm text-muted-foreground">Загружаем таймлайн комнаты...</p>
+            <div className="rounded-2xl border border-white/12 bg-background/25 px-4 py-5 text-sm text-muted-foreground">
+              Загружаем расписание комнаты...
+            </div>
           ) : schedule.isError ? (
             <div className="rounded-xl border border-danger/45 bg-danger/10 px-4 py-3 text-sm text-danger">
-              Не удалось загрузить таймлайн.
+              Не удалось загрузить расписание.
               <button type="button" className="ml-3 underline" onClick={() => void schedule.refetch()}>
                 Повторить
               </button>
@@ -177,33 +189,40 @@ const RoomDetailOverlay = () => {
               initial={reducedMotion ? false : 'hidden'}
               animate={reducedMotion ? undefined : 'visible'}
               variants={{visible: {transition: {staggerChildren: 0.1}}, hidden: {}}}
-              className="grid gap-4"
+              className="grid min-h-0 gap-4"
             >
-              <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
-                <p className="mb-2 mt-0 text-xs text-muted-foreground">
-                  Обновлено: {Math.max(0, Math.floor((nowTs - schedule.dataUpdatedAt) / 1000))} сек назад
-                </p>
-                {isDesktop ? (
-                  <ScheduleTimelineDesktop
-                    compact
-                    model={roomModel}
-                    selectedRange={selectedRange}
-                    onSelectionCommit={(range) => setSelectedRange(range)}
-                    onSelectionClear={() => setSelectedRange(null)}
-                  />
-                ) : (
-                  <ScheduleListMobile
-                    model={roomModel}
-                    selectedRange={selectedRange}
-                    onSelectionCommit={(range) => setSelectedRange(range)}
-                    onSelectionClear={() => setSelectedRange(null)}
-                  />
-                )}
+              <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}} className="rounded-2xl border border-white/12 bg-background/20 p-3 sm:p-4">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-lg border border-white/15 bg-background/45 px-2.5 py-1 text-xs text-muted-foreground">
+                    Обновлено {updatedSecondsAgo} сек назад
+                  </span>
+                  <span className="rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1 text-xs text-primary">
+                    {isDesktop ? 'Тяните курсор по слотам для выбора диапазона' : 'Выберите старт и конец встречи'}
+                  </span>
+                </div>
+                <div className="min-h-0 max-h-[50dvh] overflow-y-auto overflow-x-hidden pr-1 rf-scrollbar sm:max-h-[54dvh] lg:max-h-[58dvh]">
+                  {isDesktop ? (
+                    <ScheduleTimelineDesktop
+                      compact
+                      model={roomModel}
+                      selectedRange={selectedRange}
+                      onSelectionCommit={(range) => setSelectedRange(range)}
+                      onSelectionClear={() => setSelectedRange(null)}
+                    />
+                  ) : (
+                    <ScheduleListMobile
+                      model={roomModel}
+                      selectedRange={selectedRange}
+                      onSelectionCommit={(range) => setSelectedRange(range)}
+                      onSelectionClear={() => setSelectedRange(null)}
+                    />
+                  )}
+                </div>
               </motion.div>
 
               <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
-                <GlassCard variant="compact" className="flex flex-wrap items-center justify-between gap-3 p-4">
-                  <div>
+                <GlassCard variant="compact" className="flex flex-col gap-3 rounded-2xl border border-white/12 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <p className="rf-tabular m-0 text-sm font-semibold text-foreground">
                       {selectedRange ? `${selectedRange.start} - ${selectedRange.end}` : 'Выберите диапазон'}
                     </p>
@@ -211,13 +230,23 @@ const RoomDetailOverlay = () => {
                       {selectedRange ? `Слотов: ${selectedRange.slotCount}` : 'Выделите интервалы на таймлайне'}
                     </p>
                   </div>
-                  <MagneticButton
-                    onClick={() => void handleBook()}
-                    disabled={!selectedRange || createMutation.isPending}
-                    className="rounded-xl border border-primary/50 bg-primary/75 px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {createMutation.isPending ? 'Бронируем...' : 'Забронировать'}
-                  </MagneticButton>
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRange(null)}
+                      disabled={!selectedRange || createMutation.isPending}
+                      className="w-1/2 rounded-xl border border-white/20 bg-white/8 px-3 py-2 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    >
+                      Сбросить
+                    </button>
+                    <MagneticButton
+                      onClick={() => void handleBook()}
+                      disabled={!selectedRange || createMutation.isPending}
+                      className="w-1/2 rounded-xl border border-primary/50 bg-primary/75 px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    >
+                      {createMutation.isPending ? 'Бронируем...' : 'Забронировать'}
+                    </MagneticButton>
+                  </div>
                 </GlassCard>
               </motion.div>
             </motion.div>
