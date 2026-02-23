@@ -22,6 +22,8 @@ import type {AdminRoom} from '../../../types/adminRooms';
 import RoomFormModal from './RoomFormModal';
 import RoomFileManager from './RoomFileManager';
 import NumberStepperInput from '../../../components/ui/NumberStepperInput';
+import SeoMeta from '../../../components/seo/SeoMeta';
+import {absoluteUrl} from '../../../lib/seo';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type AdminTab = 'rooms' | 'users' | 'bookings';
@@ -211,6 +213,13 @@ const AdminOverlay = () => {
   const selectedStatusLabel = statusOptions.find((option) => option.value === statusFilter)?.label ?? t('admin.bookings.status.all');
 
   return (
+    <>
+    <SeoMeta
+      title="Админ-панель | RoomFlow"
+      description="Служебная панель управления RoomFlow."
+      url={absoluteUrl('/admin')}
+      noindex
+    />
     <motion.div
       data-cursor-scope="admin"
       className="pointer-events-auto absolute inset-0 z-overlay flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
@@ -625,6 +634,7 @@ const AdminOverlay = () => {
         />
       </motion.div>
     </motion.div>
+    </>
   );
 };
 

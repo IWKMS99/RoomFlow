@@ -5,6 +5,8 @@ import {useTranslation} from 'react-i18next';
 import type {BookingResponse} from '../types/booking';
 import NeonButton from '../components/ui/NeonButton';
 import GlassCard from '../components/polish/GlassCard';
+import SeoMeta from '../components/seo/SeoMeta';
+import {absoluteUrl} from '../lib/seo';
 
 const formatConfirmationDate = (isoString: string, locale: string): string =>
   new Date(isoString).toLocaleDateString(locale, {
@@ -41,6 +43,12 @@ const ConfirmationPage: React.FC = () => {
 
   return (
     <section className="mx-auto w-full max-w-lg pb-6">
+      <SeoMeta
+        title="Бронирование подтверждено | RoomFlow"
+        description="Страница подтверждения бронирования."
+        url={absoluteUrl('/booking/confirmed')}
+        noindex
+      />
       <GlassCard variant="hero" tone="accent" className="text-center">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-success/14 text-success rf-soft-beacon">
           <CalendarCheck2 size={26} />

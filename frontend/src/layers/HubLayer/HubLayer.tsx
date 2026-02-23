@@ -9,6 +9,8 @@ import {useScheduleQuery} from '../../services/hooks/useScheduleQuery';
 import type {ScheduleRoomVm} from '../../features/schedule/lib/scheduleViewModel';
 import {motionTokens} from '../../lib/motionTokens';
 import DateNavigator from '../../features/schedule/components/DateNavigator';
+import SeoMeta from '../../components/seo/SeoMeta';
+import {absoluteUrl} from '../../lib/seo';
 
 interface RoomSummary extends Omit<ScheduleRoomVm, 'isPast' | 'isAvailable'> {
   availableSlots: number;
@@ -70,6 +72,11 @@ const HubLayer = () => {
 
   return (
     <div className="h-full w-full overflow-y-auto p-6 md:p-12">
+      <SeoMeta
+        title="Бронирование переговорных комнат | RoomFlow"
+        description="Актуальное расписание переговорных комнат и быстрый выбор свободных слотов."
+        url={absoluteUrl('/schedule')}
+      />
       <div className="mx-auto mb-10 flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">{t('hub.title')}</h1>
@@ -86,7 +93,9 @@ const HubLayer = () => {
           <motion.div
             key={room.roomId}
             layoutId={`room-card-${room.roomId}`}
+            layout="position"
             transition={{type: 'spring', stiffness: 280, damping: 24}}
+            style={{borderRadius: 32}}
             data-room-id={room.roomId}
             onClick={() => {
               useHubStore.getState().enterRoom(room.roomId);

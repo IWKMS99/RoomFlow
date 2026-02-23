@@ -15,6 +15,8 @@ import {motionTokens} from '../../../lib/motionTokens';
 import PillToggle from '../../../components/ui/PillToggle';
 import StatusChip from '../../../components/ui/StatusChip';
 import type {BookingResponse, BookingStatus} from '../../../types/booking';
+import SeoMeta from '../../../components/seo/SeoMeta';
+import {absoluteUrl} from '../../../lib/seo';
 
 type BookingTab = 'active' | 'history';
 
@@ -86,6 +88,13 @@ const MyBookingsOverlay = () => {
   };
 
   return (
+    <>
+    <SeoMeta
+      title="Мои бронирования | RoomFlow"
+      description="Персональный список бронирований."
+      url={absoluteUrl('/my-bookings')}
+      noindex
+    />
     <motion.div
       data-cursor-scope="book"
       className="pointer-events-auto absolute inset-0 z-overlay flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
@@ -206,6 +215,7 @@ const MyBookingsOverlay = () => {
         </div>
       </motion.div>
     </motion.div>
+    </>
   );
 };
 

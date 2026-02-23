@@ -10,6 +10,8 @@ import NeonButton from '../components/ui/NeonButton';
 import {loginUser} from '../services/api';
 import {getApiErrorMessage} from '../lib/httpError';
 import {motionPreset} from '../lib/motion';
+import SeoMeta from '../components/seo/SeoMeta';
+import {absoluteUrl} from '../lib/seo';
 
 type LoginFormValues = {
   email: string;
@@ -78,6 +80,12 @@ const LoginPage: React.FC = () => {
   };
 
   return (
+    <>
+    <SeoMeta
+      title="Вход в RoomFlow"
+      description="Войдите в RoomFlow для бронирования переговорных комнат."
+      url={absoluteUrl('/login')}
+    />
     <motion.div
       layoutId="auth-panel-shell"
       initial={reducedMotion ? false : {opacity: 0, y: 18, scale: 0.98}}
@@ -145,6 +153,7 @@ const LoginPage: React.FC = () => {
         </Link>
       </motion.p>
     </motion.div>
+    </>
   );
 };
 
