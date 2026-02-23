@@ -7,6 +7,7 @@ export interface ScheduleRoomVm {
   floor: number;
   isAvailable: boolean;
   isPast: boolean;
+  coverImageUrl?: string | null;
 }
 
 export interface ScheduleSlotVm {
@@ -38,6 +39,7 @@ const mapRoom = (room: RoomInSchedule): ScheduleRoomVm => ({
   floor: room.floor,
   isAvailable: room.isAvailable,
   isPast: false,
+  coverImageUrl: room.coverImageUrl ?? null,
 });
 
 const isSameDay = (left: Date, right: Date) =>

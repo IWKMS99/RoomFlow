@@ -3,6 +3,7 @@ import {motion, useReducedMotion} from 'framer-motion';
 import {ArrowLeft, User} from 'lucide-react';
 import {useNavigate, useParams} from '@tanstack/react-router';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 import GlassCard from '../../../components/polish/GlassCard';
 import EmptyState from '../../../components/polish/EmptyState';
 import ScheduleTimelineDesktop from '../../../features/schedule/components/ScheduleTimelineDesktop';
@@ -19,6 +20,7 @@ import {getApiErrorMessage} from '../../../lib/httpError';
 import {motionTokens} from '../../../lib/motionTokens';
 
 const RoomDetailOverlay = () => {
+  const {t} = useTranslation();
   const navigate = useNavigate();
   const params = useParams({strict: false});
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -56,8 +58,10 @@ const RoomDetailOverlay = () => {
       roomName: firstRoom.roomName,
       floor: firstRoom.floor,
       capacity: firstRoom.capacity,
+      coverImageUrl: firstRoom.coverImageUrl ?? null,
     };
   }, [roomModel.slots]);
+  const [imageError, setImageError] = React.useState(false);
 
   const updatedSecondsAgo = Math.max(0, Math.floor((nowTs - schedule.dataUpdatedAt) / 1000));
 
@@ -75,6 +79,10 @@ const RoomDetailOverlay = () => {
   }, []);
 
   React.useEffect(() => {
+    setImageError(false);
+  }, [roomId, selectedDateKey, roomMeta?.coverImageUrl]);
+
+  React.useEffect(() => {
     if (!currentRoomId || schedule.isLoading || schedule.isError) {
       return;
     }
@@ -85,13 +93,13 @@ const RoomDetailOverlay = () => {
     }
 
     if (!guardToastRef.current) {
-      toast('Комната не найдена в расписании на выбранную дату. Возвращаем в хаб.');
+      toast(t('roomDetail.roomNotFound'));
       guardToastRef.current = true;
     }
 
     useHubStore.getState().exitRoom();
     navigate({to: '/schedule', replace: true});
-  }, [navigate, currentRoomId, roomModel.slots.length, schedule.isError, schedule.isLoading]);
+  }, [navigate, currentRoomId, roomModel.slots.length, schedule.isError, schedule.isLoading, t]);
 
   const createMutation = useCreateBookingMutation(selectedDateKey, roomId ?? '');
 
@@ -106,10 +114,10 @@ const RoomDetailOverlay = () => {
         startTime: formatLocalDateTime(parseDateKey(selectedDateKey), selectedRange.start),
         endTime: formatLocalDateTime(parseDateKey(selectedDateKey), selectedRange.end),
       });
-      toast.success('Бронирование создано.');
+      toast.success(t('roomDetail.bookingCreated'));
       setSelectedRange(null);
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Не удалось завершить бронирование.'));
+      toast.error(getApiErrorMessage(error, t('roomDetail.bookingError')));
     }
   };
 
@@ -143,19 +151,43 @@ const RoomDetailOverlay = () => {
           variants={{visible: {transition: {staggerChildren: 0.1}}, hidden: {}}}
           className="grid gap-4"
         >
+          {roomMeta?.coverImageUrl && !imageError ? (
+            <motion.div
+              variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}
+              className="relative overflow-hidden rounded-2xl border border-white/12 bg-background/30"
+            >
+              <img
+                src={roomMeta.coverImageUrl}
+                alt={`${roomMeta.roomName} ${t('room.imageAlt')}`}
+                loading="lazy"
+                decoding="async"
+                onError={() => setImageError(true)}
+                className="h-full w-full aspect-[21/9] object-cover"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent" />
+            </motion.div>
+          ) : (
+            <motion.div
+              variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}
+              className="flex aspect-[21/9] items-center justify-center rounded-2xl border border-white/12 bg-background/25 text-sm text-muted-foreground"
+            >
+              {t('room.imageUnavailable')}
+            </motion.div>
+          )}
+
           <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}} className="mb-1 flex flex-col gap-3 rounded-2xl border border-white/10 bg-background/35 p-3 sm:p-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
-              <p className="rf-meta m-0 text-[11px] text-muted-foreground">Детали комнаты</p>
+              <p className="rf-meta m-0 text-[11px] text-muted-foreground">{t('roomDetail.detailsLabel')}</p>
               <motion.h2 layoutId={`room-title-${roomId}`} transition={motionTokens.card} className="m-0 mt-1 truncate text-xl font-bold text-foreground sm:text-2xl">
-                {roomMeta?.roomName ?? 'Комната'}
+                {roomMeta?.roomName ?? t('roomDetail.fallbackRoomName')}
               </motion.h2>
               {roomMeta && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className="rf-tabular rounded-lg border border-white/15 bg-background/45 px-2 py-1 text-xs text-muted-foreground">
-                    {roomMeta.capacity} мест
+                    {t('roomDetail.capacity', {count: roomMeta.capacity})}
                   </span>
                   <span className="rf-tabular rounded-lg border border-white/15 bg-background/45 px-2 py-1 text-xs text-muted-foreground">
-                    Этаж {roomMeta.floor}
+                    {t('roomDetail.floor', {floor: roomMeta.floor})}
                   </span>
                   <span className="rf-tabular rounded-lg border border-white/15 bg-background/45 px-2 py-1 text-xs text-muted-foreground">
                     {selectedDateKey}
@@ -167,32 +199,32 @@ const RoomDetailOverlay = () => {
             <MagneticButton
               onClick={closeRoomDetail}
               data-cursor="view"
-              data-cursor-text="BACK"
+              data-cursor-text={t('cursor.back')}
               className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground sm:w-auto"
             >
-              <ArrowLeft size={15} /> Назад
+              <ArrowLeft size={15} /> {t('common.back')}
             </MagneticButton>
           </motion.div>
 
           {schedule.isLoading ? (
             <div className="rounded-2xl border border-white/12 bg-background/25 px-4 py-5 text-sm text-muted-foreground">
-              Загружаем расписание комнаты...
+              {t('roomDetail.loadingSchedule')}
             </div>
           ) : schedule.isError ? (
             <div className="rounded-xl border border-danger/45 bg-danger/10 px-4 py-3 text-sm text-danger">
-              Не удалось загрузить расписание.
+              {t('roomDetail.errorSchedule')}
               <button
                 type="button"
                 className="ml-3 underline"
                 data-cursor="book"
-                data-cursor-text="RETRY"
+                data-cursor-text={t('cursor.retry')}
                 onClick={() => void schedule.refetch()}
               >
-                Повторить
+                {t('common.retry')}
               </button>
             </div>
           ) : roomModel.slots.length === 0 ? (
-            <EmptyState title="Нет данных по комнате" description="Выберите другую дату или обновите страницу." icon={User} />
+            <EmptyState title={t('roomDetail.emptyTitle')} description={t('roomDetail.emptyDescription')} icon={User} />
           ) : (
             <motion.div
               initial={reducedMotion ? false : 'hidden'}
@@ -203,10 +235,10 @@ const RoomDetailOverlay = () => {
               <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}} className="rounded-2xl border border-white/12 bg-background/20 p-3 sm:p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="rounded-lg border border-white/15 bg-background/45 px-2.5 py-1 text-xs text-muted-foreground">
-                    Обновлено {updatedSecondsAgo} сек назад
+                    {t('roomDetail.updatedAgo', {seconds: updatedSecondsAgo})}
                   </span>
                   <span className="rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1 text-xs text-primary">
-                    {isDesktop ? 'Тяните курсор по слотам для выбора диапазона' : 'Выберите старт и конец встречи'}
+                    {isDesktop ? t('roomDetail.desktopHint') : t('roomDetail.mobileHint')}
                   </span>
                 </div>
                 <div className="min-h-0 max-h-[38dvh] overflow-y-auto overflow-x-hidden pr-1 rf-scrollbar sm:max-h-[54dvh] lg:max-h-[58dvh]">
@@ -233,7 +265,7 @@ const RoomDetailOverlay = () => {
                 <GlassCard variant="compact" className="flex flex-col gap-3 rounded-2xl border border-white/12 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="rf-tabular m-0 mb-2 text-sm font-semibold text-foreground">
-                      {selectedRange ? `${selectedRange.start} - ${selectedRange.end}` : 'Выберите диапазон'}
+                      {selectedRange ? `${selectedRange.start} - ${selectedRange.end}` : t('roomDetail.selectRange')}
                     </p>
                   </div>
                   <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -241,20 +273,20 @@ const RoomDetailOverlay = () => {
                       type="button"
                       onClick={() => setSelectedRange(null)}
                       data-cursor={!selectedRange || createMutation.isPending ? 'locked' : 'view'}
-                      data-cursor-text={!selectedRange || createMutation.isPending ? undefined : 'CLEAR'}
+                      data-cursor-text={!selectedRange || createMutation.isPending ? undefined : t('cursor.clear')}
                       disabled={!selectedRange || createMutation.isPending}
                       className="w-1/2 rounded-xl border border-white/20 bg-white/8 px-3 py-2 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                     >
-                      Сбросить
+                      {t('common.reset')}
                     </button>
                     <MagneticButton
                       onClick={() => void handleBook()}
                       data-cursor={!selectedRange || createMutation.isPending ? 'locked' : 'book'}
-                      data-cursor-text={!selectedRange || createMutation.isPending ? undefined : 'BOOK'}
+                      data-cursor-text={!selectedRange || createMutation.isPending ? undefined : t('cursor.book')}
                       disabled={!selectedRange || createMutation.isPending}
                       className="w-1/2 rounded-xl border border-primary/50 bg-primary/75 px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     >
-                      {createMutation.isPending ? 'Бронируем...' : 'Забронировать'}
+                      {createMutation.isPending ? t('roomDetail.bookingPending') : t('roomDetail.book')}
                     </MagneticButton>
                   </div>
                 </GlassCard>

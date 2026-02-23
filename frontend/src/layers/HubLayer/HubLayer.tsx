@@ -64,6 +64,7 @@ const HubLayer = () => {
 
   const visibleRooms = rooms.length > 0 ? rooms : lastNonEmptyRoomsRef.current;
   const isInitialLoading = isLoading && visibleRooms.length === 0;
+  const [brokenImageRooms, setBrokenImageRooms] = React.useState<Record<string, boolean>>({});
 
   return (
     <div className="h-full w-full overflow-y-auto p-6 md:p-12">
@@ -93,8 +94,24 @@ const HubLayer = () => {
             whileTap={{scale: 0.995}}
             className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-card/38 p-6 shadow-[inset_0_1px_0_hsl(var(--text-hi)/0.12),0_22px_54px_-34px_hsl(var(--shadow-depth)/0.94)] backdrop-blur-[20px] transition-colors hover:border-primary/40 hover:bg-card/56"
           >
+            {room.coverImageUrl && !brokenImageRooms[room.roomId] && (
+              <>
+                <motion.img
+                  src={room.coverImageUrl}
+                  alt={`${room.roomName} ${t('room.imageAlt')}`}
+                  loading="lazy"
+                  decoding="async"
+                  initial={{opacity: 0}}
+                  animate={{opacity: 1}}
+                  transition={{duration: 0.22, ease: 'easeOut'}}
+                  onError={() => setBrokenImageRooms((state) => ({...state, [room.roomId]: true}))}
+                  className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-t from-background/90 via-background/60 to-background/20" />
+              </>
+            )}
             <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_1px_20px_hsl(var(--glow-2)/0.1)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="mb-4 flex items-start justify-between">
+            <div className="relative z-10 mb-4 flex items-start justify-between">
               <div className="rf-tabular rounded-full border border-white/10 bg-background/24 px-3 py-1 text-xs font-medium text-muted-foreground">
                 {room.floor} этаж
               </div>
@@ -108,12 +125,12 @@ const HubLayer = () => {
             <motion.h3
               layoutId={`room-title-${room.roomId}`}
               transition={motionTokens.card}
-              className="text-xl font-bold text-foreground transition-colors group-hover:text-primary"
+              className="relative z-10 text-xl font-bold text-foreground transition-colors group-hover:text-primary"
             >
               {room.roomName}
             </motion.h3>
 
-            <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
+            <div className="relative z-10 mt-2 flex items-center justify-between text-sm text-muted-foreground">
               <span className="rf-tabular">{room.capacity} человек</span>
               <span className={`rf-tabular ${room.availableSlots > 0 ? 'text-emerald-400' : 'text-red-400'}`}>{room.availableSlots} слотов</span>
             </div>
