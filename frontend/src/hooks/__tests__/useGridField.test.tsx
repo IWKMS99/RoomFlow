@@ -60,11 +60,13 @@ describe('useGridField', () => {
 
   it('disables field when reduced motion is enabled', () => {
     mockedUseReducedMotion.mockReturnValue(true);
-    const {result} = renderHook(() => useGridField());
+    const containerRef = {current: document.createElement('div')};
+    const {result} = renderHook(() => useGridField(containerRef));
 
     expect(result.current.enabled).toBe(false);
-    expect(result.current.cursorStrength).toBe(0);
-    expect(result.current.elementStrength).toBe(0);
+    expect(result.current.stateRef.current.enabled).toBe(false);
+    expect(result.current.stateRef.current.cursorStrength).toBe(0);
+    expect(result.current.stateRef.current.elementStrength).toBe(0);
   });
 
   it('applies and clears element influence on focus transitions', () => {
@@ -81,22 +83,23 @@ describe('useGridField', () => {
       }) as DOMRect;
     document.body.appendChild(button);
 
-    const {result} = renderHook(() => useGridField());
+    const containerRef = {current: document.createElement('div')};
+    const {result} = renderHook(() => useGridField(containerRef));
 
     act(() => {
       button.dispatchEvent(new FocusEvent('focusin', {bubbles: true}));
       vi.advanceTimersByTime(220);
     });
 
-    expect(result.current.elementStrength).toBeGreaterThan(0.4);
-    expect(result.current.elementRadius).toBeGreaterThan(90);
+    expect(result.current.stateRef.current.elementStrength).toBeGreaterThan(0.4);
+    expect(result.current.stateRef.current.elementRadius).toBeGreaterThan(90);
 
     act(() => {
       button.dispatchEvent(new FocusEvent('focusout', {bubbles: true, relatedTarget: document.body}));
       vi.advanceTimersByTime(400);
     });
 
-    expect(result.current.elementStrength).toBeLessThan(0.08);
+    expect(result.current.stateRef.current.elementStrength).toBeLessThan(0.08);
   });
 
   it('ignores elements with data-grid-influence=off', () => {
@@ -113,34 +116,36 @@ describe('useGridField', () => {
       }) as DOMRect;
     document.body.appendChild(button);
 
-    const {result} = renderHook(() => useGridField());
+    const containerRef = {current: document.createElement('div')};
+    const {result} = renderHook(() => useGridField(containerRef));
 
     act(() => {
       button.dispatchEvent(new FocusEvent('focusin', {bubbles: true}));
       vi.advanceTimersByTime(280);
     });
 
-    expect(result.current.elementStrength).toBeLessThan(0.02);
+    expect(result.current.stateRef.current.elementStrength).toBeLessThan(0.02);
   });
 
   it('tracks cursor and then decays state after blur', () => {
-    const {result} = renderHook(() => useGridField());
+    const containerRef = {current: document.createElement('div')};
+    const {result} = renderHook(() => useGridField(containerRef));
 
     act(() => {
       dispatchPointerEvent('pointermove', window, {clientX: 1120, clientY: 160});
       vi.advanceTimersByTime(180);
     });
 
-    expect(result.current.cursorStrength).toBeGreaterThan(0.45);
-    expect(Math.abs(result.current.tiltX)).toBeGreaterThan(0.2);
+    expect(result.current.stateRef.current.cursorStrength).toBeGreaterThan(0.45);
+    expect(Math.abs(result.current.stateRef.current.tiltX)).toBeGreaterThan(0.2);
 
     act(() => {
       window.dispatchEvent(new Event('blur'));
       vi.advanceTimersByTime(520);
     });
 
-    expect(result.current.cursorStrength).toBeLessThan(0.08);
-    expect(Math.abs(result.current.tiltX)).toBeLessThan(0.1);
-    expect(Math.abs(result.current.tiltY)).toBeLessThan(0.1);
+    expect(result.current.stateRef.current.cursorStrength).toBeLessThan(0.08);
+    expect(Math.abs(result.current.stateRef.current.tiltX)).toBeLessThan(0.1);
+    expect(Math.abs(result.current.stateRef.current.tiltY)).toBeLessThan(0.1);
   });
 });

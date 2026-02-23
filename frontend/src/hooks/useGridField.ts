@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {type RefObject, useEffect, useMemo, useRef} from 'react';
 import {useReducedMotion} from 'framer-motion';
 import {useMediaQuery} from './useMediaQuery';
 import {usePerformanceTier} from './usePerformanceTier';
@@ -89,11 +89,24 @@ const applyElementField = (target: GridFieldVector, element: HTMLElement, streng
   target.elementStrength = strength;
 };
 
-export const useGridField = (): GridFieldState => {
+const applyGridCssVariables = (container: HTMLElement, state: GridFieldState) => {
+  const style = container.style;
+  style.setProperty('--rf-grid-cx', `${state.cursorX.toFixed(2)}px`);
+  style.setProperty('--rf-grid-cy', `${state.cursorY.toFixed(2)}px`);
+  style.setProperty('--rf-grid-ex', `${state.elementX.toFixed(2)}px`);
+  style.setProperty('--rf-grid-ey', `${state.elementY.toFixed(2)}px`);
+  style.setProperty('--rf-grid-er', `${state.elementRadius.toFixed(2)}px`);
+  style.setProperty('--rf-grid-c-strength', state.cursorStrength.toFixed(3));
+  style.setProperty('--rf-grid-e-strength', state.elementStrength.toFixed(3));
+  style.setProperty('--rf-grid-tilt-x', state.tiltX.toFixed(3));
+  style.setProperty('--rf-grid-tilt-y', state.tiltY.toFixed(3));
+};
+
+export const useGridField = (containerRef: RefObject<HTMLElement | null>) => {
   const reducedMotion = useReducedMotion();
   const coarsePointer = useMediaQuery('(pointer: coarse)');
   const performanceTier = usePerformanceTier();
-  const [state, setState] = useState<GridFieldState>(() => ({enabled: false, ...createBaseVector()}));
+  const stateRef = useRef<GridFieldState>({enabled: false, ...createBaseVector()});
 
   const enabled = useMemo(() => {
     if (reducedMotion) return false;
@@ -103,13 +116,23 @@ export const useGridField = (): GridFieldState => {
   }, [coarsePointer, performanceTier, reducedMotion]);
 
   useEffect(() => {
+    const base = {enabled, ...createBaseVector()};
+    stateRef.current = base;
+    if (containerRef.current) {
+      applyGridCssVariables(containerRef.current, base);
+    }
+
     if (!enabled) {
-      setState({enabled: false, ...createBaseVector()});
       return;
     }
 
     const current = {...createBaseVector(), cursorStrength: DEFAULT_CURSOR_STRENGTH};
     const target = {...current};
+    stateRef.current = {enabled: true, ...current};
+    if (containerRef.current) {
+      applyGridCssVariables(containerRef.current, stateRef.current);
+    }
+
     const activeElementRef: {current: HTMLElement | null} = {current: null};
     const activeStrengthRef = {current: 0};
     const requestFrame = (callback: FrameRequestCallback) =>
@@ -222,7 +245,11 @@ export const useGridField = (): GridFieldState => {
       current.tiltX = lerp(current.tiltX, target.tiltX, LERP_FACTOR);
       current.tiltY = lerp(current.tiltY, target.tiltY, LERP_FACTOR);
 
-      setState({enabled: true, ...current});
+      stateRef.current = {enabled: true, ...current};
+      if (containerRef.current) {
+        applyGridCssVariables(containerRef.current, stateRef.current);
+      }
+
       frameId = requestFrame(tick);
     };
 
@@ -246,7 +273,10 @@ export const useGridField = (): GridFieldState => {
         cancelFrame(frameId);
       }
     };
-  }, [enabled]);
+  }, [containerRef, enabled]);
 
-  return state;
+  return {
+    enabled,
+    stateRef,
+  };
 };

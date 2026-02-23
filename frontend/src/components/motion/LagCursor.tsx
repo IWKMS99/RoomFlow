@@ -24,6 +24,8 @@ const LagCursor = () => {
   const glowY = useSpring(mouseY, {stiffness: 110, damping: 20, mass: 1.15});
 
   const idleTimeoutRef = useRef<number | null>(null);
+  const pendingCursorResolveFrameRef = useRef<number | null>(null);
+  const latestPointerTargetRef = useRef<EventTarget | null>(null);
   const cursorStateRef = useRef(cursorState);
   const visibleRef = useRef(isVisible);
 
@@ -62,6 +64,12 @@ const LagCursor = () => {
         idleTimeoutRef.current = null;
       }
     };
+    const clearPendingResolve = () => {
+      if (pendingCursorResolveFrameRef.current !== null) {
+        window.cancelAnimationFrame(pendingCursorResolveFrameRef.current);
+        pendingCursorResolveFrameRef.current = null;
+      }
+    };
 
     const scheduleIdleHide = () => {
       clearIdle();
@@ -82,10 +90,16 @@ const LagCursor = () => {
         visibleRef.current = true;
       }
 
-      const next = resolveCursorState(event.target);
-      const prev = cursorStateRef.current;
-      if (next.mode !== prev.mode || next.text !== prev.text || next.source !== prev.source) {
-        setCursorState(next);
+      latestPointerTargetRef.current = event.target;
+      if (pendingCursorResolveFrameRef.current === null) {
+        pendingCursorResolveFrameRef.current = window.requestAnimationFrame(() => {
+          pendingCursorResolveFrameRef.current = null;
+          const next = resolveCursorState(latestPointerTargetRef.current);
+          const prev = cursorStateRef.current;
+          if (next.mode !== prev.mode || next.text !== prev.text || next.source !== prev.source) {
+            setCursorState(next);
+          }
+        });
       }
 
       scheduleIdleHide();
@@ -130,6 +144,7 @@ const LagCursor = () => {
 
     return () => {
       clearIdle();
+      clearPendingResolve();
       document.documentElement.classList.remove('rf-lag-cursor-active');
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerdown', handlePointerDown);

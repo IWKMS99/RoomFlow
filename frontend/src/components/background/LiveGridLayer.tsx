@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import {useGridField} from '../../hooks/useGridField';
 import {cn} from '../../lib/utils';
 
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const SPACING = 40;
-const RESOLUTION = 8;
+const RESOLUTION = 24;
 const CURSOR_INFLUENCE = 280;
 const CURSOR_FORCE = 0.6;
 const ELEMENT_FORCE = 0.52;
@@ -43,18 +43,9 @@ const hasMeaningfulDiff = (next: FieldSnapshot, prev: FieldSnapshot) =>
   Math.abs(next.elementStrength - prev.elementStrength) > EPSILON;
 
 const LiveGridLayer = ({theme}: Props) => {
-  const field = useGridField();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const fieldRef = useRef<FieldSnapshot>({
-    cursorX: field.cursorX,
-    cursorY: field.cursorY,
-    cursorStrength: field.cursorStrength,
-    elementX: field.elementX,
-    elementY: field.elementY,
-    elementRadius: field.elementRadius,
-    elementStrength: field.elementStrength,
-  });
+  const {enabled, stateRef: fieldRef} = useGridField(containerRef);
   const sizeRef = useRef<CanvasSize>({
     width: 0,
     height: 0,
@@ -76,21 +67,9 @@ const LiveGridLayer = ({theme}: Props) => {
   );
 
   useEffect(() => {
-    fieldRef.current = {
-      cursorX: field.cursorX,
-      cursorY: field.cursorY,
-      cursorStrength: field.cursorStrength,
-      elementX: field.elementX,
-      elementY: field.elementY,
-      elementRadius: field.elementRadius,
-      elementStrength: field.elementStrength,
-    };
-  }, [field.cursorX, field.cursorY, field.cursorStrength, field.elementX, field.elementY, field.elementRadius, field.elementStrength]);
-
-  useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
-    if (!canvas || !container || !field.enabled) return;
+    if (!canvas || !container || !enabled) return;
 
     const ctx = canvas.getContext('2d', {alpha: true});
     if (!ctx) return;
@@ -125,7 +104,16 @@ const LiveGridLayer = ({theme}: Props) => {
     }
 
     const render = () => {
-      const nextField = fieldRef.current;
+      const liveField = fieldRef.current;
+      const nextField = {
+        cursorX: liveField.cursorX,
+        cursorY: liveField.cursorY,
+        cursorStrength: liveField.cursorStrength,
+        elementX: liveField.elementX,
+        elementY: liveField.elementY,
+        elementRadius: liveField.elementRadius,
+        elementStrength: liveField.elementStrength,
+      };
       const prevField = previousFieldRef.current;
       const shouldDraw = forceRender || hasMeaningfulDiff(nextField, prevField);
 
@@ -135,7 +123,7 @@ const LiveGridLayer = ({theme}: Props) => {
       }
 
       forceRender = false;
-      previousFieldRef.current = {...nextField};
+      previousFieldRef.current = nextField;
 
       const {width, height} = sizeRef.current;
 
@@ -222,21 +210,9 @@ const LiveGridLayer = ({theme}: Props) => {
         window.removeEventListener('resize', resizeCanvas);
       }
     };
-  }, [field.enabled, gridColor]);
+  }, [enabled, fieldRef, gridColor]);
 
-  const style = {
-    '--rf-grid-cx': `${field.cursorX.toFixed(2)}px`,
-    '--rf-grid-cy': `${field.cursorY.toFixed(2)}px`,
-    '--rf-grid-ex': `${field.elementX.toFixed(2)}px`,
-    '--rf-grid-ey': `${field.elementY.toFixed(2)}px`,
-    '--rf-grid-er': `${field.elementRadius.toFixed(2)}px`,
-    '--rf-grid-c-strength': field.cursorStrength.toFixed(3),
-    '--rf-grid-e-strength': field.elementStrength.toFixed(3),
-    '--rf-grid-tilt-x': field.tiltX.toFixed(3),
-    '--rf-grid-tilt-y': field.tiltY.toFixed(3),
-  } as React.CSSProperties;
-
-  if (!field.enabled) {
+  if (!enabled) {
     return (
       <div
         aria-hidden="true"
@@ -254,7 +230,6 @@ const LiveGridLayer = ({theme}: Props) => {
       ref={containerRef}
       aria-hidden="true"
       className={cn('pointer-events-none absolute inset-0 rf-live-grid', theme === 'light' ? 'rf-stage-grid--light' : 'rf-stage-grid--dark')}
-      style={style}
     >
       <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" />
       <div className="rf-live-grid__shade" />
