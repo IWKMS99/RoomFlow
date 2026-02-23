@@ -1,12 +1,13 @@
 import {useEffect} from 'react';
-import {useLocation, useMatch} from 'react-router-dom';
+import {useLocation, useMatchRoute} from '@tanstack/react-router';
 import {useHubStore} from '../store/useHubStore';
 
 export const useRouteSceneSync = () => {
   const location = useLocation();
-  const roomMatch = useMatch('/schedule/room/:roomId');
+  const matchRoute = useMatchRoute();
+  const roomMatch = matchRoute({to: '/schedule/room/$roomId'});
   const syncFromRoute = useHubStore((state) => state.syncFromRoute);
-  const roomId = roomMatch?.params.roomId;
+  const roomId = roomMatch ? roomMatch.roomId : undefined;
 
   useEffect(() => {
     syncFromRoute(location.pathname, roomId ? {roomId} : undefined);

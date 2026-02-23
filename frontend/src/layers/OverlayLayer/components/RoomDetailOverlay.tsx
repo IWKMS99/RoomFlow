@@ -1,7 +1,7 @@
 import React from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
 import {ArrowLeft, User} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams} from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import GlassCard from '../../../components/polish/GlassCard';
 import EmptyState from '../../../components/polish/EmptyState';
@@ -20,7 +20,7 @@ import {motionTokens} from '../../../lib/motionTokens';
 
 const RoomDetailOverlay = () => {
   const navigate = useNavigate();
-  const params = useParams();
+  const params = useParams({strict: false});
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const selectedDateKey = useHubStore((state) => state.selectedDateKey) || formatDateForApi(normalizeDate(new Date()));
   const activeRoomId = useHubStore((state) => state.activeRoomId);
@@ -90,7 +90,7 @@ const RoomDetailOverlay = () => {
     }
 
     useHubStore.getState().exitRoom();
-    navigate('/schedule', {replace: true});
+    navigate({to: '/schedule', replace: true});
   }, [navigate, currentRoomId, roomModel.slots.length, schedule.isError, schedule.isLoading]);
 
   const createMutation = useCreateBookingMutation(selectedDateKey, roomId ?? '');
@@ -116,7 +116,7 @@ const RoomDetailOverlay = () => {
   if (!roomId) return null;
 
   const closeRoomDetail = () => {
-    navigate('/schedule');
+    navigate({to: '/schedule'});
   };
 
   return (

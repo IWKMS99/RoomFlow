@@ -1,6 +1,6 @@
 import {useMemo, useState} from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {useHubStore} from '../../../store/useHubStore';
@@ -102,7 +102,7 @@ const MyBookingsOverlay = () => {
           <MagneticButton
             onClick={() => {
               useHubStore.getState().closeBookings();
-              navigate('/schedule');
+              navigate({to: '/schedule'});
             }}
             data-cursor="view"
             data-cursor-text="BACK"

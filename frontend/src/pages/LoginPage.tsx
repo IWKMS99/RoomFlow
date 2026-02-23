@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
-import {Link, useLocation, useNavigate} from 'react-router-dom';
+import {Link, useNavigate, useSearch} from '@tanstack/react-router';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -18,13 +18,29 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const sanitizeRedirect = (value?: string): string | null => {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('://')) {
+    return null;
+  }
+
+  try {
+    const normalized = new URL(value, window.location.origin);
+    if (normalized.origin !== window.location.origin) {
+      return null;
+    }
+    return `${normalized.pathname}${normalized.search}${normalized.hash}`;
+  } catch {
+    return null;
+  }
+};
+
 const LoginPage: React.FC = () => {
   const {t} = useTranslation();
   const reducedMotion = useReducedMotion();
   const [error, setError] = useState<string | null>(null);
   const auth = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+  const search = useSearch({from: '/auth-layout/login'});
   const {
     register,
     handleSubmit,
@@ -36,8 +52,7 @@ const LoginPage: React.FC = () => {
       password: '',
     },
   });
-  const from = (location.state as {from?: {pathname: string; search?: string}} | null)?.from;
-  const redirectTo = from ? `${from.pathname}${from.search ?? ''}` : '/schedule';
+  const redirectTo = sanitizeRedirect(search.redirect) ?? '/schedule';
 
   const onSubmit = async (values: LoginFormValues) => {
     setError(null);
@@ -45,7 +60,11 @@ const LoginPage: React.FC = () => {
     try {
       const response = await loginUser(values);
       await auth.login(response.token);
-      navigate(redirectTo, {replace: true});
+      if (redirectTo === '/schedule') {
+        navigate({to: '/schedule', replace: true});
+      } else {
+        navigate({href: redirectTo, replace: true});
+      }
     } catch (err: unknown) {
       console.error('Login failed:', err);
       setError(getApiErrorMessage(err, 'Неверный email или пароль.'));

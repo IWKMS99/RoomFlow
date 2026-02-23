@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import type React from 'react';
 import {AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform} from 'framer-motion';
 import {BookMarked, CalendarDays, Languages, LogIn, LogOut, MoonStar, Shield, Sun, UserCircle2, X} from 'lucide-react';
-import {NavLink, useLocation, useNavigate} from 'react-router-dom';
+import {Link, useLocation, useNavigate} from '@tanstack/react-router';
 import {useTranslation} from 'react-i18next';
 import {cn} from '../../lib/utils';
 import {motionPreset} from '../../lib/motion';
@@ -43,11 +43,20 @@ const getDockCursorText = (route: string): string => {
   return 'SCHEDULE';
 };
 
+const isRouteActive = (currentPath: string, route: string) => {
+  if (route === '/schedule') {
+    return currentPath === '/schedule' || currentPath.startsWith('/schedule/');
+  }
+  return currentPath === route || currentPath.startsWith(`${route}/`);
+};
+
 const DockItemButton = ({
   item,
+  isActive,
   onRouteHover,
 }: {
   item: DockItem;
+  isActive: boolean;
   onRouteHover?: (route: string) => void;
 }) => {
   const reducedMotion = useReducedMotion();
@@ -73,48 +82,44 @@ const DockItemButton = ({
       onMouseEnter={() => onRouteHover?.(item.to)}
       className="origin-right overflow-hidden"
     >
-      <NavLink
+      <Link
         to={item.to}
         data-cursor={getDockCursorMode(item.to)}
         data-cursor-text={getDockCursorText(item.to)}
-        className={({isActive}) =>
-          cn(
-            `${itemBase} overflow-hidden`,
-            isActive
-              ? 'border-primary/50 text-foreground shadow-[0_14px_30px_-18px_hsl(var(--primary)/0.9)]'
-              : 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground'
-          )
-        }
+        className={cn(
+          `${itemBase} overflow-hidden`,
+          isActive
+            ? 'border-primary/50 text-foreground shadow-[0_14px_30px_-18px_hsl(var(--primary)/0.9)]'
+            : 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground'
+        )}
       >
-        {({isActive}) => (
-          <>
-            {item.flyoutPanelLayoutId ? (
+        <>
+          {item.flyoutPanelLayoutId ? (
+            <motion.span
+              layoutId={item.flyoutPanelLayoutId}
+              aria-hidden="true"
+              transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
+              className="absolute inset-[1px] rounded-full bg-primary/14"
+            />
+          ) : (
+            isActive && (
               <motion.span
-                layoutId={item.flyoutPanelLayoutId}
+                layoutId="dock-nav-active-pill"
                 aria-hidden="true"
                 transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
-                className="absolute inset-[1px] rounded-full bg-primary/14"
+                className="absolute inset-0 bg-primary/25"
               />
-            ) : (
-              isActive && (
-                <motion.span
-                  layoutId="dock-nav-active-pill"
-                  aria-hidden="true"
-                  transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
-                  className="absolute inset-0 bg-primary/25"
-                />
-              )
-            )}
-            <span className="relative z-base inline-flex items-center gap-2">
-              <item.icon size={15} />
-              <span className="hidden md:inline">{item.label}</span>
-            </span>
-            {isActive && !item.flyoutPanelLayoutId && (
-              <span className="pointer-events-none absolute bottom-1.5 left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.82)]" />
-            )}
-          </>
-        )}
-      </NavLink>
+            )
+          )}
+          <span className="relative z-base inline-flex items-center gap-2">
+            <item.icon size={15} />
+            <span className="hidden md:inline">{item.label}</span>
+          </span>
+          {isActive && !item.flyoutPanelLayoutId && (
+            <span className="pointer-events-none absolute bottom-1.5 left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.82)]" />
+          )}
+        </>
+      </Link>
     </motion.div>
   );
 };
@@ -208,7 +213,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             {items
               .filter((item) => !((item.to === '/my-bookings' && isBookingsOpen) || (item.to === '/admin' && isAdminOpen)))
               .map((item) => (
-                <DockItemButton key={item.to} item={item} onRouteHover={onRouteHover} />
+                <DockItemButton key={item.to} item={item} isActive={isRouteActive(location.pathname, item.to)} onRouteHover={onRouteHover} />
               ))}
           </AnimatePresence>
           <MagneticButton
@@ -262,7 +267,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             </AnimatePresence>
           ) : (
             <MagneticButton
-              onClick={() => navigate('/login')}
+              onClick={() => navigate({to: '/login'})}
               data-cursor="view"
               data-cursor-text="LOGIN"
               className={cn(itemBase, 'border-primary/42 bg-primary/22 text-foreground hover:bg-primary/32')}
@@ -337,7 +342,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
               className="relative flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
               onClick={() => {
                 setIsAccountMenuOpen(false);
-                navigate('/my-bookings');
+                navigate({to: '/my-bookings'});
               }}
             >
               <BookMarked size={14} className="mr-2" />
@@ -351,7 +356,7 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
                 className="relative mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
                 onClick={() => {
                   setIsAccountMenuOpen(false);
-                  navigate('/admin');
+                  navigate({to: '/admin'});
                 }}
               >
                 <Shield size={14} className="mr-2" />

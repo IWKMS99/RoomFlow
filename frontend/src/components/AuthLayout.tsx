@@ -1,7 +1,7 @@
 import type React from 'react';
 import {AnimatePresence, LayoutGroup} from 'framer-motion';
 import {useEffect, useRef, useState} from 'react';
-import {Outlet, useLocation} from 'react-router-dom';
+import {Outlet, useLocation} from '@tanstack/react-router';
 import PageTransition from './polish/PageTransition';
 
 const AuthLayout: React.FC = () => {

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link, useNavigate} from '@tanstack/react-router';
 import {useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {z} from 'zod';
@@ -49,7 +49,7 @@ const RegisterPage: React.FC = () => {
     try {
       const response = await registerUser({email: values.email, password: values.password});
       await auth.login(response.token);
-      navigate('/schedule');
+      navigate({to: '/schedule'});
     } catch (err: unknown) {
       console.error('Registration failed:', err);
       setError(getApiErrorMessage(err, 'Ошибка регистрации.'));

@@ -1,5 +1,5 @@
-import {describe, expect, it, beforeEach} from 'vitest';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {beforeEach, describe, expect, it} from 'vitest';
+import {Outlet, RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter} from '@tanstack/react-router';
 import {render, waitFor} from '@testing-library/react';
 import {useRouteSceneSync} from '../useRouteSceneSync';
 import {useHubStore} from '../../store/useHubStore';
@@ -7,6 +7,43 @@ import {useHubStore} from '../../store/useHubStore';
 const Probe = () => {
   useRouteSceneSync();
   return null;
+};
+
+const buildTestRouter = (initialPath: string) => {
+  const rootRoute = createRootRoute({
+    component: Outlet,
+  });
+
+  const scheduleRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/schedule',
+    component: Probe,
+  });
+
+  const roomRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/schedule/room/$roomId',
+    component: Probe,
+  });
+
+  const bookingsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/my-bookings',
+    component: Probe,
+  });
+
+  const adminRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/admin',
+    component: Probe,
+  });
+
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([scheduleRoute, roomRoute, bookingsRoute, adminRoute]),
+    history: createMemoryHistory({initialEntries: [initialPath]}),
+  });
+
+  return router;
 };
 
 describe('useRouteSceneSync', () => {
@@ -21,13 +58,9 @@ describe('useRouteSceneSync', () => {
   });
 
   it('syncs room route to store', async () => {
-    render(
-      <MemoryRouter initialEntries={['/schedule/room/r-7']}>
-        <Routes>
-          <Route path="/schedule/room/:roomId" element={<Probe />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    const router = buildTestRouter('/schedule/room/r-7');
+
+    render(<RouterProvider router={router} />);
 
     await waitFor(() => {
       expect(useHubStore.getState().viewMode).toBe('room_detail');
@@ -38,13 +71,9 @@ describe('useRouteSceneSync', () => {
   });
 
   it('syncs my-bookings route to store', async () => {
-    render(
-      <MemoryRouter initialEntries={['/my-bookings']}>
-        <Routes>
-          <Route path="/my-bookings" element={<Probe />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    const router = buildTestRouter('/my-bookings');
+
+    render(<RouterProvider router={router} />);
 
     await waitFor(() => {
       expect(useHubStore.getState().viewMode).toBe('my_bookings');
@@ -55,13 +84,9 @@ describe('useRouteSceneSync', () => {
   });
 
   it('syncs admin route to store', async () => {
-    render(
-      <MemoryRouter initialEntries={['/admin']}>
-        <Routes>
-          <Route path="/admin" element={<Probe />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    const router = buildTestRouter('/admin');
+
+    render(<RouterProvider router={router} />);
 
     await waitFor(() => {
       expect(useHubStore.getState().viewMode).toBe('admin');

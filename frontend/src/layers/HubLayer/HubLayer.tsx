@@ -1,6 +1,6 @@
 import React from 'react';
 import {motion} from 'framer-motion';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from '@tanstack/react-router';
 import {useTranslation} from 'react-i18next';
 import {formatDateForApi, normalizeDate, parseDateKey} from '../../lib/datetime/dateKey';
 import {useHubStore} from '../../store/useHubStore';
@@ -87,7 +87,7 @@ const HubLayer = () => {
             data-room-id={room.roomId}
             onClick={() => {
               useHubStore.getState().enterRoom(room.roomId);
-              navigate(`/schedule/room/${room.roomId}`);
+              navigate({to: '/schedule/room/$roomId', params: {roomId: room.roomId}});
             }}
             whileHover={{y: -4}}
             whileTap={{scale: 0.995}}

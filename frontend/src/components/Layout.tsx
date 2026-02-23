@@ -1,11 +1,10 @@
 import React from 'react';
 import {Toaster} from 'react-hot-toast';
-import {Outlet, useLocation, useNavigate} from 'react-router-dom';
+import {Outlet, useLocation} from '@tanstack/react-router';
 import {AnimatePresence, LayoutGroup, motion, useReducedMotion} from 'framer-motion';
 import {useAuth} from '../context/useAuth';
 import {useRouteSceneSync} from '../hooks/useRouteSceneSync';
 import {type ThemeMode, useTheme} from '../hooks/useTheme';
-import {useHubStore} from '../store/useHubStore';
 import LiveGridLayer from './background/LiveGridLayer';
 import HubLayer from '../layers/HubLayer/HubLayer';
 import OverlayLayer from '../layers/OverlayLayer/OverlayLayer';
@@ -21,9 +20,8 @@ interface ThemeRippleState {
 }
 
 const Layout: React.FC = () => {
-  const {isLoading, token} = useAuth();
+  const {isLoading} = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const {theme, setTheme, toggleTheme} = useTheme();
   const [themeRipple, setThemeRipple] = React.useState<ThemeRippleState | null>(null);
@@ -39,13 +37,6 @@ const Layout: React.FC = () => {
       document.body.style.overflow = prevOverflow;
     };
   }, []);
-
-  React.useEffect(() => {
-    if (!token && (location.pathname.startsWith('/my-bookings') || location.pathname.startsWith('/admin'))) {
-      useHubStore.getState().resetToGlobal();
-      navigate('/login', {replace: true, state: {from: location}});
-    }
-  }, [location, navigate, token]);
 
   React.useEffect(
     () => () => {

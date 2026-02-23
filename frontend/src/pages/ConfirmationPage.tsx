@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {Link, useLocation, useNavigate} from 'react-router-dom';
+import {Link, useLocation, useNavigate} from '@tanstack/react-router';
 import {CalendarCheck2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {BookingResponse} from '../types/booking';
@@ -25,11 +25,11 @@ const ConfirmationPage: React.FC = () => {
   const navigate = useNavigate();
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
 
-  const state = location.state as {bookingDetails: BookingResponse; roomName: string} | null;
+  const state = location.state as unknown as {bookingDetails: BookingResponse; roomName: string} | null;
 
   useEffect(() => {
     if (!state?.bookingDetails) {
-      navigate('/schedule', {replace: true});
+      navigate({to: '/schedule', replace: true});
     }
   }, [state, navigate]);
 

@@ -1,4 +1,4 @@
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from '@tanstack/react-router';
 import {useQueryClient} from '@tanstack/react-query';
 import DockNav from '../../components/polish/DockNav';
 import LagCursor from '../../components/motion/LagCursor';
@@ -22,7 +22,7 @@ const NavigationLayer = ({theme, onToggleTheme}: Props) => {
   const handleLogout = async () => {
     await logout();
     useHubStore.getState().resetToGlobal();
-    navigate('/login');
+    navigate({to: '/login'});
   };
 
   const prefetchByRoute = (route: string) => {

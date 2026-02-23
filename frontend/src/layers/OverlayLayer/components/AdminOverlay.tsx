@@ -1,6 +1,6 @@
 import {AnimatePresence, motion, useReducedMotion} from 'framer-motion';
 import {Check, ChevronDown, Shield} from 'lucide-react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import React from 'react';
 import {useTranslation} from 'react-i18next';
@@ -133,7 +133,7 @@ const AdminOverlay = () => {
           <MagneticButton
             onClick={() => {
               useHubStore.getState().leaveAdmin();
-              navigate('/schedule');
+              navigate({to: '/schedule'});
             }}
             data-cursor="view"
             data-cursor-text="BACK"
