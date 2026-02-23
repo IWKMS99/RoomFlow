@@ -3,15 +3,23 @@ package iwkms.roomflow;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import iwkms.roomflow.modules.booking.impl.domain.Booking;
+import iwkms.roomflow.modules.booking.impl.domain.BookingStatus;
+import iwkms.roomflow.modules.booking.impl.domain.Room;
+import iwkms.roomflow.modules.booking.impl.repository.BookingRepository;
+import iwkms.roomflow.modules.booking.impl.repository.RoomRepository;
 import iwkms.roomflow.modules.user.impl.domain.Role;
 import iwkms.roomflow.modules.user.impl.domain.User;
 import iwkms.roomflow.modules.user.impl.repository.UserRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -45,8 +53,15 @@ class AdminControllerIT {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
     private User adminUser;
     private User regularUser;
+    private Room roomA;
 
     @BeforeEach
     void setUp() {
@@ -66,6 +81,9 @@ class AdminControllerIT {
 
         userRepository.save(adminUser);
         userRepository.save(regularUser);
+        roomA = roomRepository
+                .findById(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+                .orElseThrow();
     }
 
     @Test
@@ -118,5 +136,49 @@ class AdminControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /admin/bookings: администратор видит бронирования с фильтром по дате")
+    void shouldReturnAdminBookingsForDate() throws Exception {
+        LocalDate targetDate = LocalDate.now().plusDays(1);
+        Booking booking = Booking.builder()
+                .id(UUID.randomUUID())
+                .room(roomA)
+                .userId(regularUser.getId())
+                .startTime(targetDate.atTime(10, 0))
+                .endTime(targetDate.atTime(10, 30))
+                .status(BookingStatus.CONFIRMED)
+                .build();
+        bookingRepository.saveAndFlush(booking);
+
+        mockMvc.perform(get("/api/v1/admin/bookings")
+                        .with(user(adminUser))
+                        .param("date", targetDate.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(booking.getId().toString())))
+                .andExpect(jsonPath("$[0].userEmail", is(regularUser.getEmail())));
+    }
+
+    @Test
+    @DisplayName("DELETE /admin/bookings/{id}: админ может отменять чужие бронирования")
+    void shouldAllowAdminCancelAnyBookingFromAdminEndpoint() throws Exception {
+        LocalDateTime start = LocalDateTime.now().plusDays(2).withHour(11).withMinute(0).withSecond(0).withNano(0);
+        Booking booking = Booking.builder()
+                .id(UUID.randomUUID())
+                .room(roomA)
+                .userId(regularUser.getId())
+                .startTime(start)
+                .endTime(start.plusMinutes(30))
+                .status(BookingStatus.CONFIRMED)
+                .build();
+        bookingRepository.saveAndFlush(booking);
+
+        mockMvc.perform(delete("/api/v1/admin/bookings/{bookingId}", booking.getId()).with(user(adminUser)))
+                .andExpect(status().isNoContent());
+
+        Booking updated = bookingRepository.findById(booking.getId()).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(BookingStatus.CANCELLED, updated.getStatus());
     }
 }
