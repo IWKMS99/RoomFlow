@@ -275,4 +275,38 @@ class BookingControllerIT {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", is("Room is already booked for the selected time period.")));
     }
+
+    @Test
+    @DisplayName("POST /bookings: нельзя создать бронирование для неактивной комнаты")
+    void shouldReturnNotFoundWhenRoomIsInactive() throws Exception {
+        roomA.setActive(false);
+        roomRepository.saveAndFlush(roomA);
+
+        CreateBookingRequestDto request = new CreateBookingRequestDto(
+                ROOM_A_ID,
+                LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withNano(0),
+                LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withNano(0));
+
+        mockMvc.perform(post("/api/v1/bookings")
+                        .with(user(testUser1))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /schedule: не должен возвращать неактивные комнаты")
+    void shouldHideInactiveRoomsFromSchedule() throws Exception {
+        roomA.setActive(false);
+        roomRepository.saveAndFlush(roomA);
+        LocalDate testDate = LocalDate.now().plusDays(1);
+
+        mockMvc.perform(get("/api/v1/schedule")
+                        .with(user(testUser1))
+                        .param("date", testDate.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timeSlots[0].rooms", hasSize(1)))
+                .andExpect(jsonPath("$.timeSlots[0].rooms[0].roomId", is("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")));
+    }
 }
