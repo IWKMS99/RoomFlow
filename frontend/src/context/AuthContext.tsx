@@ -1,9 +1,10 @@
-import React, {createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, {createContext, type ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 import {jwtDecode} from 'jwt-decode';
 import type {AuthUser, DecodedToken} from '../types/user';
 import {getCurrentUser, logoutUser, refreshAccessToken, setupInterceptors} from '../services/api.ts';
 
-interface AuthContextType {
+export interface AuthContextType {
     token: string | null;
     user: AuthUser | null;
     isAuthenticated: boolean;
@@ -14,7 +15,7 @@ interface AuthContextType {
     logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_TOKEN_STORAGE_KEY = 'authToken';
 
@@ -154,7 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
     }, [clearAuthState]);
 
     const isAuthenticated = !!token;
-    const hasRole = (role: string) => !!user?.roles?.includes(role);
+    const hasRole = useCallback((role: string) => !!user?.roles?.includes(role), [user]);
     const isAdmin = hasRole('ROLE_ADMIN');
 
     const value = useMemo(
@@ -168,16 +169,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
             login,
             logout,
         }),
-        [token, user, isAuthenticated, isLoading, isAdmin, login, logout]
+        [token, user, isAuthenticated, isLoading, isAdmin, hasRole, login, logout]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = (): AuthContextType => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
 };

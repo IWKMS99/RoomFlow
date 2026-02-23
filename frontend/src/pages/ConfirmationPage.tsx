@@ -1,80 +1,84 @@
 import React, {useEffect} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
-import styles from './ConfirmationPage.module.css';
+import {CalendarCheck2} from 'lucide-react';
 import type {BookingResponse} from '../types/booking';
+import NeonButton from '../components/ui/NeonButton';
+import GlassCard from '../components/polish/GlassCard';
 
-const formatConfirmationDate = (isoString: string): string => {
-    return new Date(isoString).toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-};
+const formatConfirmationDate = (isoString: string): string =>
+  new Date(isoString).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
 const formatConfirmationTime = (startIso: string, endIso: string): string => {
-    const startTime = new Date(startIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
-    const endTime = new Date(endIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
-    return `${startTime} - ${endTime}`;
+  const startTime = new Date(startIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+  const endTime = new Date(endIso).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+  return `${startTime} - ${endTime}`;
 };
 
-const SuccessIcon = () => (
-    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
-            fill="#28a745"/>
-    </svg>
-);
-
 const ConfirmationPage: React.FC = () => {
-    const location = useLocation();
-    const navigate = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    const state = location.state as { bookingDetails: BookingResponse; roomName: string } | null;
+  const state = location.state as {bookingDetails: BookingResponse; roomName: string} | null;
 
-    useEffect(() => {
-        if (!state?.bookingDetails) {
-            console.warn("Confirmation page accessed without booking details. Redirecting.");
-            navigate('/schedule', {replace: true});
-        }
-    }, [state, navigate]);
-
+  useEffect(() => {
     if (!state?.bookingDetails) {
-        return <p>Проверка данных о бронировании...</p>;
+      navigate('/schedule', {replace: true});
     }
+  }, [state, navigate]);
 
-    const {bookingDetails, roomName} = state;
+  if (!state?.bookingDetails) {
+    return <p className="text-sm text-muted-foreground">Проверка данных о бронировании...</p>;
+  }
 
-    return (
-        <div className={styles.pageContainer}>
-            <div className={styles.card}>
-                <div className={styles.iconWrapper}><SuccessIcon/></div>
+  const {bookingDetails, roomName} = state;
 
-                <h1 className={styles.title}>Бронирование подтверждено!</h1>
-
-                <p className={styles.subtitle}>Вы получите напоминание за 30 минут до начала.</p>
-
-                <div className={styles.details}>
-                    <div className={styles.detailItem}>
-                        <span>Помещение:</span>
-                        <strong>{roomName}</strong>
-                    </div>
-                    <div className={styles.detailItem}>
-                        <span>Дата:</span>
-                        <strong>{formatConfirmationDate(bookingDetails.startTime)}</strong>
-                    </div>
-                    <div className={styles.detailItem}>
-                        <span>Время:</span>
-                        <strong>{formatConfirmationTime(bookingDetails.startTime, bookingDetails.endTime)}</strong>
-                    </div>
-                </div>
-
-                <div className={styles.actions}>
-                    <Link to="/schedule" className={`${styles.button} ${styles.primary}`}>Журнал занятости</Link>
-                    <Link to="/my-bookings" className={`${styles.button} ${styles.secondary}`}>Мои брони</Link>
-                </div>
-            </div>
+  return (
+    <section className="mx-auto w-full max-w-lg pb-6">
+      <GlassCard variant="hero" tone="accent" className="text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-success/14 text-success rf-soft-beacon">
+          <CalendarCheck2 size={26} />
         </div>
-    );
+
+        <p className="rf-meta m-0 text-[11px] text-muted-foreground">Booking complete</p>
+        <h1 className="rf-display m-0 mt-2 text-3xl font-bold">Бронирование подтверждено</h1>
+        <p className="mb-0 mt-2 text-sm text-muted-foreground">Вы получите напоминание за 30 минут до начала.</p>
+
+        <div className="my-6 space-y-2 rounded-2xl border border-white/14 bg-white/6 p-4 text-left">
+          <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Помещение</span>
+            <strong className="text-foreground">{roomName}</strong>
+          </p>
+          <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Дата</span>
+            <strong className="text-foreground">{formatConfirmationDate(bookingDetails.startTime)}</strong>
+          </p>
+          <p className="m-0 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Время</span>
+            <strong className="rf-tabular text-foreground">
+              {formatConfirmationTime(bookingDetails.startTime, bookingDetails.endTime)}
+            </strong>
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link to="/schedule" className="flex-1">
+            <NeonButton className="w-full" size="lg">
+              Журнал занятости
+            </NeonButton>
+          </Link>
+          <Link to="/my-bookings" className="flex-1">
+            <NeonButton variant="secondary" className="w-full" size="lg">
+              Мои брони
+            </NeonButton>
+          </Link>
+        </div>
+      </GlassCard>
+    </section>
+  );
 };
 
 export default ConfirmationPage;

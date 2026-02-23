@@ -1,56 +1,113 @@
 import React, {useState} from 'react';
+import {motion, useReducedMotion} from 'framer-motion';
 import {Link, useNavigate} from 'react-router-dom';
-import {useAuth} from '../context/AuthContext';
+import {useAuth} from '../context/useAuth';
+import NeonButton from '../components/ui/NeonButton';
 import {registerUser} from '../services/api';
-import styles from './LoginPage.module.css';
+import {getApiErrorMessage} from '../lib/httpError';
+import {motionPreset} from '../lib/motion';
 
 const RegisterPage: React.FC = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const auth = useAuth();
-    const navigate = useNavigate();
+  const reducedMotion = useReducedMotion();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const auth = useAuth();
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        setIsSubmitting(true);
-        try {
-            const response = await registerUser({email, password});
-            await auth.login(response.token);
-            navigate('/schedule');
-        } catch (err: any) {
-            console.error("Registration failed:", err);
-            setError(err.response?.data?.message || "Ошибка при регистрации.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
 
-    return (
-        <div className={styles.pageContainer}>
-            <h1 className={styles.title}>Регистрация</h1>
-            <form onSubmit={handleSubmit}>
-                <div className={styles.formField}>
-                    <label htmlFor="email">Email</label>
-                    <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required/>
-                </div>
-                <div className={styles.formField}>
-                    <label htmlFor="password">Пароль (мин. 6 символов)</label>
-                    <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                           required minLength={6}/>
-                </div>
-                <p className={styles.error}>{error}</p>
-                <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-                    {isSubmitting ? 'Регистрация...' : 'Создать аккаунт'}
-                </button>
-            </form>
-            <p className={styles.link}>
-                Уже есть аккаунт? <Link to="/login">Войдите</Link>
-            </p>
+    if (password !== confirmPassword) {
+      setError('Пароли не совпадают.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await registerUser({email, password});
+      await auth.login(response.token);
+      navigate('/schedule');
+    } catch (err: unknown) {
+      console.error('Registration failed:', err);
+      setError(getApiErrorMessage(err, 'Ошибка регистрации.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={reducedMotion ? false : {opacity: 0, y: 18, scale: 0.98}}
+      animate={reducedMotion ? undefined : {opacity: 1, y: 0, scale: 1}}
+      transition={motionPreset.springGentle}
+      className="rf-modal relative w-full max-w-md overflow-hidden rounded-[1.75rem] p-7 md:p-8"
+    >
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/75 to-transparent" />
+      <p className="rf-meta m-0 text-[11px] text-muted-foreground">RoomFlow setup</p>
+      <h1 className="rf-display mb-6 mt-2 text-3xl font-bold">Создать аккаунт</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            className="w-full rounded-xl border border-white/16 bg-background/50 px-3 py-2.5 text-sm text-foreground"
+          />
         </div>
-    );
+
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Пароль
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            className="w-full rounded-xl border border-white/16 bg-background/50 px-3 py-2.5 text-sm text-foreground"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="confirmPassword" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Повторите пароль
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+            className="w-full rounded-xl border border-white/16 bg-background/50 px-3 py-2.5 text-sm text-foreground"
+          />
+        </div>
+
+        <p className="min-h-5 text-sm text-danger">{error}</p>
+
+        <NeonButton type="submit" disabled={isSubmitting} className="w-full" size="lg">
+          {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
+        </NeonButton>
+      </form>
+
+      <p className="mb-0 mt-4 text-center text-sm text-muted-foreground">
+        Уже есть аккаунт?{' '}
+        <Link to="/login" className="font-semibold text-primary">
+          Войти
+        </Link>
+      </p>
+    </motion.div>
+  );
 };
 
 export default RegisterPage;
