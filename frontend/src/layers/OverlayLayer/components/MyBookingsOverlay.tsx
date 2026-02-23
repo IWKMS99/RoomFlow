@@ -85,6 +85,7 @@ const MyBookingsOverlay = () => {
 
   return (
     <motion.div
+      data-cursor-scope="book"
       className="pointer-events-auto absolute inset-0 z-overlay flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
       initial={reducedMotion ? false : {opacity: 0}}
       animate={reducedMotion ? undefined : {opacity: 1, x: cameraPose === 'bookings' ? 0 : 16}}
@@ -103,6 +104,8 @@ const MyBookingsOverlay = () => {
               useHubStore.getState().closeBookings();
               navigate('/schedule');
             }}
+            data-cursor="view"
+            data-cursor-text="BACK"
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground"
           >
             Закрыть
@@ -115,7 +118,13 @@ const MyBookingsOverlay = () => {
           ) : bookingsQuery.isError ? (
             <div className="text-sm text-danger">
               Не удалось загрузить бронирования.
-              <button type="button" className="ml-2 underline" onClick={() => void bookingsQuery.refetch()}>
+              <button
+                type="button"
+                className="ml-2 underline"
+                data-cursor="view"
+                data-cursor-text="RETRY"
+                onClick={() => void bookingsQuery.refetch()}
+              >
                 Повторить
               </button>
             </div>
@@ -124,10 +133,24 @@ const MyBookingsOverlay = () => {
           ) : (
             <div>
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <PillToggle active={activeTab === 'active'} groupId="my-bookings-tab" itemId="active" onClick={() => setActiveTab('active')}>
+                <PillToggle
+                  active={activeTab === 'active'}
+                  groupId="my-bookings-tab"
+                  itemId="active"
+                  data-cursor="view"
+                  data-cursor-text="ACTIVE"
+                  onClick={() => setActiveTab('active')}
+                >
                   Активные ({activeBookings.length})
                 </PillToggle>
-                <PillToggle active={activeTab === 'history'} groupId="my-bookings-tab" itemId="history" onClick={() => setActiveTab('history')}>
+                <PillToggle
+                  active={activeTab === 'history'}
+                  groupId="my-bookings-tab"
+                  itemId="history"
+                  data-cursor="view"
+                  data-cursor-text="HISTORY"
+                  onClick={() => setActiveTab('history')}
+                >
                   Прошедшие/отменённые ({historyBookings.length})
                 </PillToggle>
               </div>
@@ -164,6 +187,8 @@ const MyBookingsOverlay = () => {
                           <MagneticButton
                             onClick={() => void handleCancel(booking.id)}
                             disabled={cancelMutation.isPending}
+                            data-cursor={cancelMutation.isPending ? 'locked' : 'danger'}
+                            data-cursor-text={cancelMutation.isPending ? undefined : 'CANCEL'}
                             className="mt-3 rounded-lg border border-danger/45 bg-danger/20 px-3 py-1.5 text-xs font-semibold text-danger"
                           >
                             {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}

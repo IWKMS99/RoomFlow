@@ -122,6 +122,7 @@ const RoomDetailOverlay = () => {
   return (
     <motion.div
       key="room-detail-overlay"
+      data-cursor-scope="book"
       className="pointer-events-auto absolute inset-0 z-overlay flex items-start justify-center overflow-y-auto p-2 pb-28 pt-6 sm:p-4 sm:pb-32 sm:pt-8"
       initial={reducedMotion ? false : {opacity: 0}}
       animate={reducedMotion ? undefined : {opacity: 1, scale: cameraPose === 'room' ? 1 : 0.98}}
@@ -180,7 +181,13 @@ const RoomDetailOverlay = () => {
           ) : schedule.isError ? (
             <div className="rounded-xl border border-danger/45 bg-danger/10 px-4 py-3 text-sm text-danger">
               Не удалось загрузить расписание.
-              <button type="button" className="ml-3 underline" onClick={() => void schedule.refetch()}>
+              <button
+                type="button"
+                className="ml-3 underline"
+                data-cursor="book"
+                data-cursor-text="RETRY"
+                onClick={() => void schedule.refetch()}
+              >
                 Повторить
               </button>
             </div>

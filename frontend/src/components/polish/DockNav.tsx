@@ -31,6 +31,18 @@ const itemBase =
   'group relative inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_hsl(var(--primary)/0.62),0_0_0_4px_hsl(var(--primary)/0.16)] sm:px-4';
 const accountPanelLayoutId = 'dock-account-panel';
 
+const getDockCursorMode = (route: string): 'view' | 'book' | 'admin' => {
+  if (route.startsWith('/admin')) return 'admin';
+  if (route.startsWith('/my-bookings')) return 'book';
+  return 'view';
+};
+
+const getDockCursorText = (route: string): string => {
+  if (route.startsWith('/admin')) return 'ADMIN';
+  if (route.startsWith('/my-bookings')) return 'BOOKINGS';
+  return 'SCHEDULE';
+};
+
 const DockItemButton = ({
   item,
   onRouteHover,
@@ -63,6 +75,8 @@ const DockItemButton = ({
     >
       <NavLink
         to={item.to}
+        data-cursor={getDockCursorMode(item.to)}
+        data-cursor-text={getDockCursorText(item.to)}
         className={({isActive}) =>
           cn(
             `${itemBase} overflow-hidden`,
@@ -202,6 +216,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
               void i18n.changeLanguage(i18n.language === 'ru' ? 'en' : 'ru');
             }}
             title={t('nav.lang')}
+            data-cursor="view"
+            data-cursor-text="LANG"
             className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
             aria-label={t('nav.lang')}
           >
@@ -211,6 +227,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
           <MagneticButton
             onClick={(event) => onToggleTheme({x: event.clientX, y: event.clientY})}
             title={t('nav.theme')}
+            data-cursor="view"
+            data-cursor-text="THEME"
             className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
             aria-label={t('nav.theme')}
           >
@@ -226,6 +244,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
                     onClick={handleOpenAccountMenu}
                     title={userEmail}
                     aria-label={t('nav.profile')}
+                    data-cursor="view"
+                    data-cursor-text="PROFILE"
                     className={cn(itemBase + ' overflow-hidden', 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
                   >
                     <motion.span
@@ -243,6 +263,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
           ) : (
             <MagneticButton
               onClick={() => navigate('/login')}
+              data-cursor="view"
+              data-cursor-text="LOGIN"
               className={cn(itemBase, 'border-primary/42 bg-primary/22 text-foreground hover:bg-primary/32')}
             >
               <LogIn size={15} />
@@ -297,6 +319,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
                 <button
                   type="button"
                   onClick={() => setIsAccountMenuOpen(false)}
+                  data-cursor="view"
+                  data-cursor-text="CLOSE"
                   className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
                   aria-label="Закрыть профиль"
                 >
@@ -308,6 +332,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             </div>
             <button
               type="button"
+              data-cursor="book"
+              data-cursor-text="BOOKINGS"
               className="relative flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
               onClick={() => {
                 setIsAccountMenuOpen(false);
@@ -320,6 +346,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             {isAdmin && (
               <button
                 type="button"
+                data-cursor="admin"
+                data-cursor-text="ADMIN"
                 className="relative mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
                 onClick={() => {
                   setIsAccountMenuOpen(false);
@@ -332,6 +360,8 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             )}
             <button
               type="button"
+              data-cursor="locked"
+              data-cursor-text="LOGOUT"
               className="relative mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition hover:bg-danger/14 hover:text-danger"
               onClick={() => {
                 setIsAccountMenuOpen(false);

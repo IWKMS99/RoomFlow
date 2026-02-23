@@ -2,56 +2,14 @@ import {AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring} fr
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useMediaQuery} from '../../hooks/useMediaQuery';
 import {cn} from '../../lib/utils';
-
-type CursorMode = 'default' | 'view' | 'book' | 'drag' | 'admin' | 'locked';
-
-interface CursorState {
-  mode: CursorMode;
-  text: string;
-}
-
-const MODES = new Set<CursorMode>(['default', 'view', 'book', 'drag', 'admin', 'locked']);
+import {getCursorFallbackText, resolveCursorState, type CursorState} from './cursorHeuristics';
 
 const IDLE_HIDE_MS = 1400;
-
-const readCursorState = (target: EventTarget | null): CursorState => {
-  const element = target instanceof HTMLElement ? target : null;
-  if (!element) {
-    return {mode: 'default', text: ''};
-  }
-
-  const explicit = element.closest<HTMLElement>('[data-cursor]');
-  if (explicit) {
-    const rawMode = explicit.dataset.cursor;
-    const text = explicit.dataset.cursorText ?? '';
-    const mode = rawMode && MODES.has(rawMode as CursorMode) ? (rawMode as CursorMode) : 'default';
-    return {mode, text};
-  }
-
-  if (element.closest('[data-slot-index][data-room-id], [draggable="true"], [data-drag]')) {
-    return {mode: 'drag', text: 'DRAG'};
-  }
-
-  if (element.closest('input, textarea, select, [contenteditable="true"]')) {
-    return {mode: 'locked', text: ''};
-  }
-
-  const actionElement = element.closest<HTMLElement>('button, a[href], [role="button"], summary, label');
-  if (actionElement) {
-    const isDisabled =
-      actionElement.matches(':disabled, [aria-disabled="true"]') ||
-      actionElement.getAttribute('disabled') !== null ||
-      actionElement.getAttribute('aria-disabled') === 'true';
-    return {mode: isDisabled ? 'locked' : 'view', text: ''};
-  }
-
-  return {mode: 'default', text: ''};
-};
 
 const LagCursor = () => {
   const isTouch = useMediaQuery('(pointer: coarse)');
   const reducedMotion = useReducedMotion();
-  const [cursorState, setCursorState] = useState<CursorState>({mode: 'default', text: ''});
+  const [cursorState, setCursorState] = useState<CursorState>({mode: 'default', text: '', source: 'default'});
   const [isVisible, setIsVisible] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
@@ -83,6 +41,7 @@ const LagCursor = () => {
       view: {width: 62, height: 62, borderRadius: '999px', rotate: 0},
       book: {width: 112, height: 40, borderRadius: '14px', rotate: 0},
       admin: {width: 48, height: 48, borderRadius: '12px', rotate: 12},
+      danger: {width: 102, height: 40, borderRadius: '14px', rotate: 0},
       drag: {width: 78, height: 78, borderRadius: '999px', rotate: 0},
       locked: {width: 24, height: 24, borderRadius: '999px', rotate: 0},
     }),
@@ -123,9 +82,9 @@ const LagCursor = () => {
         visibleRef.current = true;
       }
 
-      const next = readCursorState(event.target);
+      const next = resolveCursorState(event.target);
       const prev = cursorStateRef.current;
-      if (next.mode !== prev.mode || next.text !== prev.text) {
+      if (next.mode !== prev.mode || next.text !== prev.text || next.source !== prev.source) {
         setCursorState(next);
       }
 
@@ -186,7 +145,7 @@ const LagCursor = () => {
   }
 
   const mode = cursorState.mode;
-  const text = cursorState.text;
+  const text = cursorState.text || getCursorFallbackText(mode);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-cursor select-none">
@@ -215,20 +174,21 @@ const LagCursor = () => {
           mode === 'book' && 'border-success/55 bg-success/16 text-foreground',
           mode === 'drag' && 'border-primary/60 bg-primary/14 text-foreground',
           mode === 'admin' && 'border-warning/55 bg-warning/18 text-foreground',
+          mode === 'danger' && 'border-danger/60 bg-danger/16 text-danger-foreground',
           mode === 'locked' && 'border-white/35 bg-white/8 text-muted-foreground'
         )}
       >
         <AnimatePresence mode="wait">
           {(text || mode !== 'default') && (
             <motion.span
-              key={`${mode}-${text}`}
+              key={`${mode}-${text}-${cursorState.source}`}
               initial={{opacity: 0, y: 4, scale: 0.94}}
               animate={{opacity: 1, y: 0, scale: 1}}
               exit={{opacity: 0, y: -4, scale: 0.9}}
               transition={{duration: 0.14}}
               className="rf-meta pointer-events-none whitespace-nowrap"
             >
-              {text || (mode === 'book' ? 'BOOK' : mode === 'drag' ? 'DRAG' : mode === 'admin' ? 'ADMIN' : mode === 'locked' ? 'LOCK' : 'OPEN')}
+              {text}
             </motion.span>
           )}
         </AnimatePresence>
@@ -243,7 +203,7 @@ const LagCursor = () => {
         transition={{type: 'spring', stiffness: 700, damping: 40}}
         className={cn(
           'absolute rounded-full shadow-[0_0_16px_hsl(var(--primary)/0.95)]',
-          mode === 'book' ? 'h-2.5 w-2.5 bg-success' : 'h-2 w-2 bg-primary'
+          mode === 'book' ? 'h-2.5 w-2.5 bg-success' : mode === 'danger' ? 'h-2.5 w-2.5 bg-danger shadow-[0_0_16px_hsl(var(--danger)/0.9)]' : 'h-2 w-2 bg-primary'
         )}
       />
     </div>
