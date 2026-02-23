@@ -11,6 +11,19 @@ module.exports = {
       },
     },
     extend: {
+      zIndex: {
+        base: 'var(--z-base)',
+        content: 'var(--z-content)',
+        sticky: 'var(--z-sticky)',
+        popover: 'var(--z-popover)',
+        overlay: 'var(--z-overlay)',
+        dock: 'var(--z-dock)',
+        dockMenu: 'var(--z-dock-menu)',
+        themeRipple: 'var(--z-theme-ripple)',
+        cursor: 'var(--z-cursor)',
+        behind: 'var(--z-behind)',
+        decor: 'var(--z-decor)',
+      },
       borderRadius: {
         xl: 'var(--radius-xl)',
         lg: 'var(--radius-lg)',

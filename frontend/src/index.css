@@ -49,6 +49,18 @@
   --radius-md: 0.78rem;
   --radius-sm: 0.52rem;
 
+  --z-decor: -10;
+  --z-behind: -1;
+  --z-base: 0;
+  --z-theme-ripple: 6;
+  --z-content: 10;
+  --z-sticky: 20;
+  --z-popover: 30;
+  --z-overlay: 40;
+  --z-dock: 50;
+  --z-dock-menu: 70;
+  --z-cursor: 120;
+
   --stage-dark-top: 220 56% 12%;
   --stage-dark-mid: 222 64% 7%;
   --stage-dark-bottom: 224 72% 4%;
@@ -116,7 +128,7 @@ body::after {
   position: fixed;
   pointer-events: none;
   inset: 0;
-  z-index: -2;
+  z-index: calc(var(--z-decor) - 1);
 }
 
 body::before {
@@ -209,7 +221,7 @@ h3,
     radial-gradient(circle at 14% 18%, hsl(var(--glow-1) / 0.15), transparent 46%),
     radial-gradient(circle at 88% 12%, hsl(var(--glow-2) / 0.18), transparent 42%);
   pointer-events: none;
-  z-index: -1;
+  z-index: var(--z-behind);
 }
 
 .rf-scrollbar {
