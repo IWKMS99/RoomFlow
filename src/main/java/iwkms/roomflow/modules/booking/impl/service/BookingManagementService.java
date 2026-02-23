@@ -90,11 +90,13 @@ public class BookingManagementService {
             List<HolidayDto> holidays = holidayService.getHolidays(date.getYear(), "RU");
             return holidays.stream().anyMatch(holiday -> holiday.date().equals(date));
         } catch (RuntimeException ex) {
-            log.warn(
-                    "Holiday API unavailable, skipping holiday restriction for date={}, reason={}: {}",
-                    date,
-                    ex.getClass().getSimpleName(),
-                    ex.getMessage());
+            if (log.isWarnEnabled()) {
+                log.warn(
+                        "Holiday API unavailable, skipping holiday restriction for date={}, reason={}: {}",
+                        date,
+                        ex.getClass().getSimpleName(),
+                        ex.getMessage());
+            }
             return false;
         }
     }
