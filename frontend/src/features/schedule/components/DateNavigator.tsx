@@ -7,11 +7,14 @@ import {useTranslation} from 'react-i18next';
 import {cn} from '../../../lib/utils';
 import {formatDateForApi, normalizeDate} from '../../../lib/datetime/dateKey';
 import {motionTokens} from '../../../lib/motionTokens';
+import {motionPreset} from '../../../lib/motion';
 
 interface Props {
   selectedDate: Date;
   onSelect: (date: Date) => void;
 }
+
+const calendarPanelLayoutId = 'calendar-panel';
 
 const DateNavigator = ({selectedDate, onSelect}: Props) => {
   const {i18n, t} = useTranslation();
@@ -73,30 +76,43 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
         transition={motionTokens.card}
         className="rf-control-cluster flex w-full max-w-full items-center rounded-[2rem] p-1.5 shadow-lg backdrop-blur-2xl sm:w-max"
       >
-        <button
-          type="button"
-          onClick={() => setIsCalendarOpen((open) => !open)}
-          className={cn(
-            'group relative flex h-[50px] w-[50px] shrink-0 items-center gap-2.5 overflow-hidden px-3 py-2 outline-none transition sm:w-[170px]',
-            isCalendarOpen ? 'bg-primary/12 text-foreground' : 'text-foreground hover:bg-white/8'
+        <AnimatePresence initial={false} mode="popLayout">
+          {!isCalendarOpen && (
+            <motion.button
+              key="calendar-trigger"
+              type="button"
+              onClick={() => setIsCalendarOpen(true)}
+              layout
+              initial={reducedMotion ? false : {opacity: 0, scale: 0.98, width: 0}}
+              animate={reducedMotion ? undefined : {opacity: 1, scale: 1, width: 'auto'}}
+              exit={reducedMotion ? undefined : {opacity: 0, scale: 0.98, width: 0}}
+              transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
+              className="group relative flex h-[50px] w-[50px] shrink-0 items-center gap-2.5 overflow-hidden px-3 py-2 text-foreground outline-none transition hover:bg-white/8 sm:w-[170px]"
+              style={{borderRadius: 24}}
+              aria-haspopup="dialog"
+              aria-expanded={isCalendarOpen}
+              aria-label={t('schedule.dateNavigator.openCalendarAria')}
+            >
+              <motion.span
+                layoutId={calendarPanelLayoutId}
+                transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
+                aria-hidden="true"
+                className="absolute inset-[1px] rounded-[23px] bg-primary/12"
+              />
+              <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-primary/15 text-primary">
+                <CalendarIcon size={18} />
+              </span>
+              <span className="relative z-10 hidden shrink-0 flex-col items-start leading-none sm:flex">
+                <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {selectedDate.getFullYear()}
+                </span>
+                <span className="text-sm font-bold capitalize text-foreground">
+                  {selectedDate.toLocaleDateString(locale, {month: 'long'})}
+                </span>
+              </span>
+            </motion.button>
           )}
-          style={{borderRadius: 24}}
-          aria-haspopup="dialog"
-          aria-expanded={isCalendarOpen}
-          aria-label={t('schedule.dateNavigator.openCalendarAria')}
-        >
-          <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-primary/15 text-primary">
-            <CalendarIcon size={18} />
-          </span>
-          <span className="relative z-10 hidden shrink-0 flex-col items-start leading-none sm:flex">
-            <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {selectedDate.getFullYear()}
-            </span>
-            <span className="text-sm font-bold capitalize text-foreground">
-              {selectedDate.toLocaleDateString(locale, {month: 'long'})}
-            </span>
-          </span>
-        </button>
+        </AnimatePresence>
 
         <motion.div
           layout
@@ -141,19 +157,23 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
         </motion.div>
       </motion.div>
 
-      <AnimatePresence initial={false} mode="wait">
+      <AnimatePresence initial={false}>
         {isCalendarOpen && (
           <motion.div
             key="calendar-popover"
             initial={reducedMotion ? false : {opacity: 0, y: -6, scale: 0.98}}
             animate={reducedMotion ? undefined : {opacity: 1, y: 0, scale: 1}}
             exit={reducedMotion ? undefined : {opacity: 0, y: -4, scale: 0.98}}
-            transition={reducedMotion ? motionTokens.control : {duration: 0.16}}
+            transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
             className="absolute right-0 top-[calc(100%+12px)] z-popover w-full origin-top-right sm:w-[360px]"
             style={{borderRadius: 32}}
           >
             <div className="relative overflow-hidden rounded-[2rem] border border-white/20 p-4 shadow-glow backdrop-blur-2xl sm:p-5">
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))]" />
+              <motion.div
+                layoutId={calendarPanelLayoutId}
+                transition={reducedMotion ? motionPreset.quick : motionPreset.springGentle}
+                className="pointer-events-none absolute inset-0 rounded-[2rem] bg-[linear-gradient(140deg,hsl(var(--surface-glass-1)),hsl(var(--surface-glass-2)))]"
+              />
               <div className="relative z-10 mb-4 flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-primary text-primary-foreground shadow-lg">
