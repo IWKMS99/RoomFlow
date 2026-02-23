@@ -239,6 +239,12 @@ h3,
   transform-origin: center center;
   will-change: transform;
   transform: perspective(1100px) rotateX(calc(var(--rf-grid-tilt-y) * 1deg)) rotateY(calc(var(--rf-grid-tilt-x) * 1deg)) scale(1.02);
+  transition: filter 0.55s ease, opacity 0.55s ease;
+}
+
+.rf-theme-transition-active .rf-live-grid {
+  filter: saturate(1.08) brightness(1.03);
+  opacity: 0.96;
 }
 
 .rf-live-grid__mesh,

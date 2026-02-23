@@ -231,7 +231,14 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, theme, onToggle
             <span className="hidden md:inline">{i18n.language === 'ru' ? 'RU' : 'EN'}</span>
           </MagneticButton>
           <MagneticButton
-            onClick={(event) => onToggleTheme({x: event.clientX, y: event.clientY})}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              const hasPointerOrigin = event.clientX > 0 || event.clientY > 0;
+              const origin = hasPointerOrigin
+                ? {x: event.clientX, y: event.clientY}
+                : {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
+              onToggleTheme(origin);
+            }}
             title={t('nav.theme')}
             data-cursor="view"
             data-cursor-text={t('cursor.theme')}
