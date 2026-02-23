@@ -8,8 +8,8 @@ export const formatDateForApi = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const formatDateForDisplay = (date: Date): string =>
-  date.toLocaleDateString('ru-RU', {
+export const formatDateForDisplay = (date: Date, locale = 'ru-RU'): string =>
+  date.toLocaleDateString(locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'long',

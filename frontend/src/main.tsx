@@ -4,6 +4,7 @@ import {createBrowserRouter, Navigate, RouterProvider} from 'react-router-dom';
 import {QueryClientProvider} from '@tanstack/react-query';
 
 import './index.css';
+import './i18n';
 import {AuthProvider} from './context/AuthContext.tsx';
 
 import Layout from './components/Layout.tsx';
