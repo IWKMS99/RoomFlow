@@ -6,6 +6,7 @@ import {useAuth} from '../context/useAuth';
 import {useRouteSceneSync} from '../hooks/useRouteSceneSync';
 import {type ThemeMode, useTheme} from '../hooks/useTheme';
 import {useHubStore} from '../store/useHubStore';
+import LiveGridLayer from './background/LiveGridLayer';
 import HubLayer from '../layers/HubLayer/HubLayer';
 import OverlayLayer from '../layers/OverlayLayer/OverlayLayer';
 import NavigationLayer from '../layers/NavigationLayer/NavigationLayer';
@@ -93,7 +94,7 @@ const Layout: React.FC = () => {
       <Toaster position="top-right" />
 
       <div className={cn('absolute inset-0 z-base rf-stage-surface', theme === 'light' ? 'rf-stage-surface--light' : 'rf-stage-surface--dark')} />
-      <div className={cn('absolute inset-0 z-base rf-stage-grid', theme === 'light' ? 'rf-stage-grid--light' : 'rf-stage-grid--dark')} />
+      <LiveGridLayer theme={theme} />
 
       <AnimatePresence>
         {themeRipple && (

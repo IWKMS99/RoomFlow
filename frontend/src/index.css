@@ -70,6 +70,16 @@
   --stage-light-mid: 209 58% 91%;
   --stage-light-bottom: 214 40% 86%;
   --stage-light-grid: 216 24% 52% / 0.16;
+
+  --rf-grid-cx: 50vw;
+  --rf-grid-cy: 50vh;
+  --rf-grid-ex: 50vw;
+  --rf-grid-ey: 50vh;
+  --rf-grid-er: 120px;
+  --rf-grid-c-strength: 0;
+  --rf-grid-e-strength: 0;
+  --rf-grid-tilt-x: 0;
+  --rf-grid-tilt-y: 0;
 }
 
 .light {
@@ -221,6 +231,65 @@ h3,
 
 .rf-stage-grid--light {
   --stage-grid-color: var(--stage-light-grid);
+}
+
+.rf-live-grid {
+  z-index: 4;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  will-change: transform;
+  transform: perspective(1100px) rotateX(calc(var(--rf-grid-tilt-y) * 1deg)) rotateY(calc(var(--rf-grid-tilt-x) * 1deg)) scale(1.02);
+}
+
+.rf-live-grid__mesh,
+.rf-live-grid__shade {
+  position: absolute;
+  inset: -3.5%;
+  pointer-events: none;
+}
+
+.rf-live-grid__mesh {
+  background-image:
+    linear-gradient(to right, hsl(var(--stage-grid-color)) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--stage-grid-color)) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.48;
+  filter: url(#rf-live-grid-displace);
+}
+
+.rf-live-grid--no-displace .rf-live-grid__mesh {
+  filter: none;
+}
+
+.rf-live-grid__shade {
+  opacity: 0.7;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(
+      circle at var(--rf-grid-cx) var(--rf-grid-cy),
+      hsl(var(--accent-electric) / calc(var(--rf-grid-c-strength) * 0.24)) 0%,
+      hsl(var(--accent-cyan) / calc(var(--rf-grid-c-strength) * 0.18)) 22%,
+      transparent 46%
+    ),
+    radial-gradient(
+      circle at var(--rf-grid-cx) var(--rf-grid-cy),
+      transparent 0%,
+      transparent 34%,
+      hsl(var(--shadow-depth) / calc(var(--rf-grid-c-strength) * 0.2)) 56%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at var(--rf-grid-ex) var(--rf-grid-ey),
+      hsl(var(--accent-cyan) / calc(var(--rf-grid-e-strength) * 0.16)) 0%,
+      hsl(var(--accent-electric) / calc(var(--rf-grid-e-strength) * 0.12)) calc(var(--rf-grid-er) * 0.48),
+      transparent calc(var(--rf-grid-er) * 1.28)
+    ),
+    radial-gradient(
+      circle at var(--rf-grid-ex) var(--rf-grid-ey),
+      transparent calc(var(--rf-grid-er) * 0.26),
+      hsl(var(--shadow-depth) / calc(var(--rf-grid-e-strength) * 0.22)) calc(var(--rf-grid-er) * 0.82),
+      transparent calc(var(--rf-grid-er) * 1.58)
+    );
 }
 
 .rf-bg-stage::before {
@@ -376,6 +445,10 @@ h3,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .rf-live-grid {
+    display: none !important;
   }
 }
 
