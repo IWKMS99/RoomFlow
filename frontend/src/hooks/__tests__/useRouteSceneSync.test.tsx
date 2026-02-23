@@ -36,4 +36,38 @@ describe('useRouteSceneSync', () => {
       expect(useHubStore.getState().cameraPose).toBe('room');
     });
   });
+
+  it('syncs my-bookings route to store', async () => {
+    render(
+      <MemoryRouter initialEntries={['/my-bookings']}>
+        <Routes>
+          <Route path="/my-bookings" element={<Probe />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(useHubStore.getState().viewMode).toBe('my_bookings');
+      expect(useHubStore.getState().activeRoomId).toBeNull();
+      expect(useHubStore.getState().depthLevel).toBe(2);
+      expect(useHubStore.getState().cameraPose).toBe('bookings');
+    });
+  });
+
+  it('syncs admin route to store', async () => {
+    render(
+      <MemoryRouter initialEntries={['/admin']}>
+        <Routes>
+          <Route path="/admin" element={<Probe />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(useHubStore.getState().viewMode).toBe('admin');
+      expect(useHubStore.getState().activeRoomId).toBeNull();
+      expect(useHubStore.getState().depthLevel).toBe(3);
+      expect(useHubStore.getState().cameraPose).toBe('admin');
+    });
+  });
 });
