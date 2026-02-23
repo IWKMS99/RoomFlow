@@ -137,8 +137,9 @@ class BookingControllerIT {
                         .param("date", testDate.toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.timeSlots", hasSize(9)))
-                .andExpect(jsonPath("$.timeSlots[1].rooms[0].isAvailable", is(false)));
+                .andExpect(jsonPath("$.timeSlots", hasSize(18)))
+                .andExpect(jsonPath("$.timeSlots[2].rooms[0].isAvailable", is(false)))
+                .andExpect(jsonPath("$.timeSlots[3].rooms[0].isAvailable", is(false)));
     }
 
     @Test
@@ -148,7 +149,7 @@ class BookingControllerIT {
 
         mockMvc.perform(get("/api/v1/schedule").param("date", testDate.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.timeSlots", hasSize(9)));
+                .andExpect(jsonPath("$.timeSlots", hasSize(18)));
     }
 
     @Test
