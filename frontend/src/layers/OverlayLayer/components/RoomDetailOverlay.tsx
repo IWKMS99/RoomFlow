@@ -104,6 +104,11 @@ const RoomDetailOverlay = () => {
 
   if (!roomId) return null;
 
+  const closeRoomDetail = () => {
+    useHubStore.getState().exitRoom();
+    navigate('/schedule');
+  };
+
   return (
     <motion.div
       key="room-detail-overlay"
@@ -112,92 +117,101 @@ const RoomDetailOverlay = () => {
       animate={reducedMotion ? undefined : {opacity: 1, scale: cameraPose === 'room' ? 1 : 0.98}}
       exit={reducedMotion ? undefined : {opacity: 0}}
       transition={motionTokens.overlay}
+      onClick={closeRoomDetail}
     >
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
       <motion.div
         layoutId={`room-card-${roomId}`}
-        transition={motionTokens.card}
+        transition={{type: 'spring', stiffness: 280, damping: 24}}
         className="rf-modal relative w-full max-w-6xl overflow-hidden rounded-3xl p-4 sm:p-6"
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="rf-meta m-0 text-[11px] text-muted-foreground">Room Detail</p>
-            <h2 className="m-0 mt-1 text-2xl font-bold text-foreground">{roomMeta?.roomName ?? 'Комната'}</h2>
-            {roomMeta && (
-              <p className="m-0 mt-1 text-sm text-muted-foreground">
-                {roomMeta.capacity} мест • Этаж {roomMeta.floor}
-              </p>
-            )}
-          </div>
-
-          <MagneticButton
-            onClick={() => {
-              useHubStore.getState().exitRoom();
-              navigate('/schedule');
-            }}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground"
-          >
-            <ArrowLeft size={15} /> Назад
-          </MagneticButton>
-        </div>
-
-        {schedule.isLoading ? (
-          <p className="text-sm text-muted-foreground">Загружаем таймлайн комнаты...</p>
-        ) : schedule.isError ? (
-          <div className="rounded-xl border border-danger/45 bg-danger/10 px-4 py-3 text-sm text-danger">
-            Не удалось загрузить таймлайн.
-            <button type="button" className="ml-3 underline" onClick={() => void schedule.refetch()}>
-              Повторить
-            </button>
-          </div>
-        ) : roomModel.slots.length === 0 ? (
-          <EmptyState title="Нет данных по комнате" description="Выберите другую дату или обновите страницу." icon={User} />
-        ) : (
-          <motion.div
-            initial={reducedMotion ? false : 'hidden'}
-            animate={reducedMotion ? undefined : 'visible'}
-            variants={{visible: {transition: {staggerChildren: 0.05}}, hidden: {}}}
-            className="grid gap-4"
-          >
-            <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
-              {isDesktop ? (
-                <ScheduleTimelineDesktop
-                  compact
-                  model={roomModel}
-                  selectedRange={selectedRange}
-                  onSelectionCommit={(range) => setSelectedRange(range)}
-                  onSelectionClear={() => setSelectedRange(null)}
-                />
-              ) : (
-                <ScheduleListMobile
-                  model={roomModel}
-                  selectedRange={selectedRange}
-                  onSelectionCommit={(range) => setSelectedRange(range)}
-                  onSelectionClear={() => setSelectedRange(null)}
-                />
+        <motion.div
+          initial={reducedMotion ? false : 'hidden'}
+          animate={reducedMotion ? undefined : 'visible'}
+          variants={{visible: {transition: {staggerChildren: 0.1}}, hidden: {}}}
+          className="grid gap-4"
+        >
+          <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}} className="mb-1 flex items-start justify-between gap-3">
+            <div>
+              <p className="rf-meta m-0 text-[11px] text-muted-foreground">Room Detail</p>
+              <motion.h2 layoutId={`room-title-${roomId}`} transition={motionTokens.card} className="m-0 mt-1 text-2xl font-bold text-foreground">
+                {roomMeta?.roomName ?? 'Комната'}
+              </motion.h2>
+              {roomMeta && (
+                <p className="rf-tabular m-0 mt-1 text-sm text-muted-foreground">
+                  {roomMeta.capacity} мест • Этаж {roomMeta.floor}
+                </p>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
-              <GlassCard variant="compact" className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div>
-                  <p className="m-0 text-sm font-semibold text-foreground">
-                    {selectedRange ? `${selectedRange.start} - ${selectedRange.end}` : 'Выберите диапазон'}
-                  </p>
-                  <p className="m-0 mt-1 text-xs text-muted-foreground">
-                    {selectedRange ? `Слотов: ${selectedRange.slotCount}` : 'Выделите интервалы на таймлайне'}
-                  </p>
-                </div>
-                <MagneticButton
-                  onClick={() => void handleBook()}
-                  disabled={!selectedRange || createMutation.isPending}
-                  className="rounded-xl border border-primary/50 bg-primary/75 px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {createMutation.isPending ? 'Бронируем...' : 'Забронировать'}
-                </MagneticButton>
-              </GlassCard>
-            </motion.div>
+            <MagneticButton
+              onClick={closeRoomDetail}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-foreground"
+            >
+              <ArrowLeft size={15} /> Назад
+            </MagneticButton>
           </motion.div>
-        )}
+
+          {schedule.isLoading ? (
+            <p className="text-sm text-muted-foreground">Загружаем таймлайн комнаты...</p>
+          ) : schedule.isError ? (
+            <div className="rounded-xl border border-danger/45 bg-danger/10 px-4 py-3 text-sm text-danger">
+              Не удалось загрузить таймлайн.
+              <button type="button" className="ml-3 underline" onClick={() => void schedule.refetch()}>
+                Повторить
+              </button>
+            </div>
+          ) : roomModel.slots.length === 0 ? (
+            <EmptyState title="Нет данных по комнате" description="Выберите другую дату или обновите страницу." icon={User} />
+          ) : (
+            <motion.div
+              initial={reducedMotion ? false : 'hidden'}
+              animate={reducedMotion ? undefined : 'visible'}
+              variants={{visible: {transition: {staggerChildren: 0.1}}, hidden: {}}}
+              className="grid gap-4"
+            >
+              <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
+                {isDesktop ? (
+                  <ScheduleTimelineDesktop
+                    compact
+                    model={roomModel}
+                    selectedRange={selectedRange}
+                    onSelectionCommit={(range) => setSelectedRange(range)}
+                    onSelectionClear={() => setSelectedRange(null)}
+                  />
+                ) : (
+                  <ScheduleListMobile
+                    model={roomModel}
+                    selectedRange={selectedRange}
+                    onSelectionCommit={(range) => setSelectedRange(range)}
+                    onSelectionClear={() => setSelectedRange(null)}
+                  />
+                )}
+              </motion.div>
+
+              <motion.div variants={{hidden: {opacity: 0, y: 10}, visible: {opacity: 1, y: 0}}}>
+                <GlassCard variant="compact" className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <div>
+                    <p className="rf-tabular m-0 text-sm font-semibold text-foreground">
+                      {selectedRange ? `${selectedRange.start} - ${selectedRange.end}` : 'Выберите диапазон'}
+                    </p>
+                    <p className="rf-tabular m-0 mt-1 text-xs text-muted-foreground">
+                      {selectedRange ? `Слотов: ${selectedRange.slotCount}` : 'Выделите интервалы на таймлайне'}
+                    </p>
+                  </div>
+                  <MagneticButton
+                    onClick={() => void handleBook()}
+                    disabled={!selectedRange || createMutation.isPending}
+                    className="rounded-xl border border-primary/50 bg-primary/75 px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {createMutation.isPending ? 'Бронируем...' : 'Забронировать'}
+                  </MagneticButton>
+                </GlassCard>
+              </motion.div>
+            </motion.div>
+          )}
+        </motion.div>
       </motion.div>
     </motion.div>
   );

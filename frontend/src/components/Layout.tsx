@@ -52,11 +52,11 @@ const Layout: React.FC = () => {
       <motion.div
         className="relative z-10 h-full w-full"
         animate={{
-          scale: isDetailView ? 0.95 : 1,
-          filter: isDetailView ? 'blur(10px) brightness(0.7)' : 'blur(0px) brightness(1)',
-          opacity: isDetailView ? 0.5 : 1,
+          scale: isDetailView ? 0.965 : 1,
+          filter: isDetailView ? 'blur(12px) brightness(0.72)' : 'blur(0px) brightness(1)',
+          opacity: isDetailView ? 0.82 : 1,
         }}
-        transition={{duration: 0.4, ease: [0.32, 0.72, 0, 1]}}
+        transition={{type: 'spring', stiffness: 240, damping: 26}}
       >
         <HubLayer />
       </motion.div>

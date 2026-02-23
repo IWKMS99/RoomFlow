@@ -253,107 +253,117 @@ const ScheduleTimelineDesktop = ({
             {times.map((time) => (
               <div
                 key={`header-${time}`}
-                className="border-b border-white/14 bg-card/78 px-2 py-3 text-center text-[11px] font-semibold text-muted-foreground"
+                className="border-b border-r border-white/5 bg-card/78 px-2 py-3 text-center text-[11px] font-semibold text-muted-foreground"
               >
                 {time}
               </div>
             ))}
 
-            {rows.map((row) => (
-              <div key={row.roomId} className="contents">
-                <div className="sticky left-0 z-10 border-b border-r border-white/14 bg-card/92 px-4 py-3 backdrop-blur">
-                  <p className="m-0 text-sm font-semibold text-foreground">{row.roomName}</p>
-                  <p className="m-0 text-xs text-muted-foreground">
-                    {row.capacity} мест • Этаж {row.floor}
-                  </p>
-                </div>
+            {rows.map((row) => {
+              const rowSelection =
+                liveRangeIndexes && liveRangeIndexes.roomId === row.roomId
+                  ? {
+                      left: `${(liveRangeIndexes.startIndex / times.length) * 100}%`,
+                      width: `${((liveRangeIndexes.endIndex - liveRangeIndexes.startIndex + 1) / times.length) * 100}%`,
+                    }
+                  : null;
 
-                {row.cells.map((cell, index) => {
-                  const isPast = Boolean(cell?.isPast);
-                  const isAvailable = Boolean(cell && cell.isAvailable && !cell.isPast);
-                  const inActiveRange =
-                    liveRangeIndexes &&
-                    liveRangeIndexes.roomId === row.roomId &&
-                    index >= liveRangeIndexes.startIndex &&
-                    index <= liveRangeIndexes.endIndex;
-                  const isRangeStart = Boolean(inActiveRange && liveRangeIndexes && index === liveRangeIndexes.startIndex);
-                  const isRangeEnd = Boolean(inActiveRange && liveRangeIndexes && index === liveRangeIndexes.endIndex);
-                  const showCueHandles = isAvailable && !inActiveRange;
+              return (
+                <div key={row.roomId} className="contents">
+                  <div className="sticky left-0 z-10 border-b border-r border-white/14 bg-card/92 px-4 py-3 backdrop-blur">
+                    <p className="m-0 text-sm font-semibold text-foreground">{row.roomName}</p>
+                    <p className="rf-tabular m-0 text-xs text-muted-foreground">
+                      {row.capacity} мест • Этаж {row.floor}
+                    </p>
+                  </div>
 
-                  const baseClass =
-                    'group relative h-12 whitespace-nowrap border-b border-white/14 px-1.5 text-center text-[10px] font-semibold text-muted-foreground transition';
+                  <div
+                    className="relative col-[2/-1] grid border-b border-white/14"
+                    style={{gridTemplateColumns: `repeat(${times.length}, minmax(0, 1fr))`}}
+                  >
+                    {rowSelection && (
+                      <span
+                        className={`pointer-events-none absolute bottom-1.5 top-1.5 z-[1] rounded-xl border border-primary/45 bg-primary/18 shadow-[0_0_0_1px_hsl(var(--primary)/0.24),0_16px_34px_-24px_hsl(var(--primary)/0.95)] ${
+                          reducedMotion ? '' : 'rf-selection-sheen'
+                        }`}
+                        style={{
+                          left: rowSelection.left,
+                          width: rowSelection.width,
+                        }}
+                      />
+                    )}
 
-                  const stateClass = inActiveRange
-                    ? 'bg-primary/24 text-primary-foreground rf-selection-glow'
-                    : isAvailable
-                      ? 'bg-transparent text-foreground hover:bg-primary/[0.1]'
-                      : isPast
-                        ? 'bg-muted/45 text-muted-foreground'
-                        : 'bg-white/12 text-muted-foreground rf-hatch';
+                    {row.cells.map((cell, index) => {
+                      const isPast = Boolean(cell?.isPast);
+                      const isAvailable = Boolean(cell && cell.isAvailable && !cell.isPast);
+                      const inActiveRange =
+                        Boolean(
+                          liveRangeIndexes &&
+                            liveRangeIndexes.roomId === row.roomId &&
+                            index >= liveRangeIndexes.startIndex &&
+                            index <= liveRangeIndexes.endIndex
+                        );
+                      const showCueHandles = isAvailable && !inActiveRange;
 
-                  const statusLabel = inActiveRange
-                    ? 'Выбор'
-                    : isPast
-                      ? 'Прошло'
-                      : isAvailable
-                        ? 'Своб.'
-                        : 'Занято';
+                      const baseClass =
+                        'group relative z-[2] h-12 whitespace-nowrap border-r border-white/5 px-1.5 text-center text-[10px] font-semibold text-muted-foreground transition';
 
-                  return (
-                    <button
-                      key={`${row.roomId}-${times[index]}`}
-                      type="button"
-                      data-room-id={row.roomId}
-                      data-slot-index={index}
-                      {...bind(row.roomId, index)}
-                      onKeyDown={(event) => onCellKeyDown(event, row.roomId, index)}
-                      disabled={!isAvailable}
-                      className={`${baseClass} ${stateClass} ${!isAvailable ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'} ${
-                        reducedMotion ? '' : 'hover:scale-[0.985]'
-                      }`}
-                      style={{touchAction: 'none', userSelect: 'none'}}
-                      aria-label={`${row.roomName} ${times[index]} ${isAvailable ? 'свободно' : 'занято'}`}
-                      title={`${times[index]} • ${isPast ? 'Прошло' : isAvailable ? 'Свободно' : 'Занято'}`}
-                    >
-                      {inActiveRange && (
-                        <span
-                          className={`pointer-events-none absolute inset-0 overflow-hidden ${
-                            reducedMotion ? '' : 'rf-selection-sheen'
+                      const stateClass = isAvailable
+                        ? 'bg-transparent text-foreground hover:bg-primary/[0.08]'
+                        : isPast
+                          ? 'bg-muted/45 text-muted-foreground'
+                          : 'bg-white/12 text-muted-foreground rf-hatch';
+
+                      const statusLabel = inActiveRange
+                        ? 'Выбор'
+                        : isPast
+                          ? 'Прошло'
+                          : isAvailable
+                            ? 'Своб.'
+                            : 'Занято';
+
+                      return (
+                        <button
+                          key={`${row.roomId}-${times[index]}`}
+                          type="button"
+                          data-room-id={row.roomId}
+                          data-slot-index={index}
+                          {...bind(row.roomId, index)}
+                          onKeyDown={(event) => onCellKeyDown(event, row.roomId, index)}
+                          disabled={!isAvailable}
+                          className={`${baseClass} ${stateClass} ${!isAvailable ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'} ${
+                            reducedMotion ? '' : 'hover:scale-[0.985]'
                           }`}
-                        />
-                      )}
+                          style={{touchAction: 'none', userSelect: 'none'}}
+                          aria-label={`${row.roomName} ${times[index]} ${isAvailable ? 'свободно' : 'занято'}`}
+                          title={`${times[index]} • ${isPast ? 'Прошло' : isAvailable ? 'Свободно' : 'Занято'}`}
+                        >
+                          {showCueHandles && (
+                            <>
+                              <span className="pointer-events-none absolute left-1.5 top-1/2 h-3 w-[2px] -translate-y-1/2 rounded-full bg-white/35 opacity-0 transition group-hover:opacity-100" />
+                              <span className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-[2px] -translate-y-1/2 rounded-full bg-white/35 opacity-0 transition group-hover:opacity-100" />
+                            </>
+                          )}
 
-                      {showCueHandles && (
-                        <>
-                          <span className="pointer-events-none absolute left-1.5 top-1/2 h-3 w-[2px] -translate-y-1/2 rounded-full bg-white/35 opacity-0 transition group-hover:opacity-100" />
-                          <span className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-[2px] -translate-y-1/2 rounded-full bg-white/35 opacity-0 transition group-hover:opacity-100" />
-                        </>
-                      )}
-
-                      {isRangeStart && (
-                        <span className="pointer-events-none absolute left-1 top-1/2 z-20 h-3.5 w-1 -translate-y-1/2 rounded-full bg-primary/85 shadow-[0_0_0_2px_hsl(var(--primary)/0.25)]" />
-                      )}
-                      {isRangeEnd && (
-                        <span className="pointer-events-none absolute right-1 top-1/2 z-20 h-3.5 w-1 -translate-y-1/2 rounded-full bg-primary/85 shadow-[0_0_0_2px_hsl(var(--primary)/0.25)]" />
-                      )}
-
-                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        {inActiveRange ? (
-                          <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]" />
-                        ) : isAvailable ? (
-                          <span className="h-2 w-2 rounded-full border border-white/40 bg-transparent" />
-                        ) : isPast ? (
-                          <span className="h-2 w-2 rounded-full bg-muted-foreground/50" />
-                        ) : (
-                          <span className="h-2 w-2 rounded-full bg-white/35" />
-                        )}
-                      </span>
-                      <span className="sr-only">{statusLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            {inActiveRange ? (
+                              <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]" />
+                            ) : isAvailable ? (
+                              <span className="h-2 w-2 rounded-full border border-white/40 bg-transparent" />
+                            ) : isPast ? (
+                              <span className="h-2 w-2 rounded-full bg-muted-foreground/50" />
+                            ) : (
+                              <span className="h-2 w-2 rounded-full bg-white/35" />
+                            )}
+                          </span>
+                          <span className="sr-only">{statusLabel}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

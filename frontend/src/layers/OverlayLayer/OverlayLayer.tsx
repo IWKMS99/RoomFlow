@@ -11,7 +11,7 @@ const OverlayLayer = () => {
 
   return (
     <Suspense fallback={null}>
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         {viewMode === 'room_detail' && <RoomDetailOverlay key="room" />}
         {viewMode === 'my_bookings' && <MyBookingsOverlay key="bookings" />}
         {viewMode === 'admin' && <AdminOverlay key="admin" />}

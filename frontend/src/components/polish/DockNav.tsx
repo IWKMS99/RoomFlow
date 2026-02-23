@@ -5,6 +5,7 @@ import {NavLink, useNavigate} from 'react-router-dom';
 import {cn} from '../../lib/utils';
 import {motionPreset} from '../../lib/motion';
 import {useMediaQuery} from '../../hooks/useMediaQuery';
+import MagneticButton from '../motion/MagneticButton';
 
 interface DockItem {
   to: string;
@@ -72,6 +73,9 @@ const DockItemButton = ({
               <item.icon size={15} />
               <span className="hidden md:inline">{item.label}</span>
             </span>
+            {isActive && (
+              <span className="pointer-events-none absolute bottom-1.5 left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.82)]" />
+            )}
           </>
         )}
       </NavLink>
@@ -104,33 +108,30 @@ const DockNav = ({isAuthenticated, isAdmin, userEmail, onLogout, onRouteHover}: 
 
         {isAuthenticated ? (
           <>
-            <button
-              type="button"
+            <MagneticButton
               onClick={() => navigate('/my-bookings')}
               title={userEmail}
               className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-white/15 hover:bg-white/10 hover:text-foreground')}
             >
               <UserCircle2 size={15} />
               <span className="hidden max-w-[140px] truncate md:inline">{userEmail ?? 'Профиль'}</span>
-            </button>
-            <button
-              type="button"
+            </MagneticButton>
+            <MagneticButton
               onClick={() => void onLogout()}
               className={cn(itemBase, 'border-transparent text-muted-foreground hover:border-danger/35 hover:bg-danger/14 hover:text-danger')}
               aria-label="Выйти"
             >
               <LogOut size={15} />
-            </button>
+            </MagneticButton>
           </>
         ) : (
-          <button
-            type="button"
+          <MagneticButton
             onClick={() => navigate('/login')}
             className={cn(itemBase, 'border-primary/42 bg-primary/22 text-foreground hover:bg-primary/32')}
           >
             <LogIn size={15} />
             <span className="hidden md:inline">Войти</span>
-          </button>
+          </MagneticButton>
         )}
       </div>
     </motion.nav>

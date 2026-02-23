@@ -28,8 +28,8 @@ const GlassCard = ({children, className, variant = 'panel', tone = 'neutral', in
     <div
       data-interactive={interactive ? 'true' : undefined}
       className={cn(
-        'rf-glass relative overflow-hidden',
-        interactive && 'transition duration-300 hover:-translate-y-0.5 hover:shadow-glow',
+        'rf-glass relative overflow-hidden border border-white/10 shadow-[inset_0_1px_0_hsl(var(--text-hi)/0.14),inset_0_-24px_48px_hsl(var(--shadow-depth)/0.24),0_28px_68px_-36px_hsl(var(--shadow-depth)/0.94)]',
+        interactive && 'transition duration-300 hover:-translate-y-1 hover:shadow-[inset_0_1px_0_hsl(var(--text-hi)/0.16),inset_0_0_24px_hsl(var(--glow-2)/0.18),0_28px_68px_-30px_hsl(var(--shadow-depth)/0.92)]',
         variantClass[variant],
         toneClass[tone],
         className
