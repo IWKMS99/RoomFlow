@@ -1,5 +1,5 @@
 import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
-import type {BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
+import type {AdminBooking, AdminBookingFilters, BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
 import type {AuthUser} from '../types/user.ts';
 
 export interface AdminUser {
@@ -191,4 +191,15 @@ export const getAdminUsers = async (): Promise<AdminUser[]> => {
 export const updateUserRole = async (userId: string, role: 'ROLE_USER' | 'ROLE_ADMIN'): Promise<AdminUser> => {
     const response = await apiClient.put<AdminUser>(`/admin/users/${userId}/role`, {role});
     return response.data;
+};
+
+export const getAdminBookings = async (filters: AdminBookingFilters): Promise<AdminBooking[]> => {
+    const response = await apiClient.get<AdminBooking[]>('/admin/bookings', {
+        params: filters,
+    });
+    return response.data;
+};
+
+export const cancelAdminBooking = async (bookingId: string): Promise<void> => {
+    await apiClient.delete(`/admin/bookings/${bookingId}`);
 };

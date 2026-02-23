@@ -34,3 +34,23 @@ export interface CreateBookingPayload {
     startTime: string;
     endTime: string;
 }
+
+export interface AdminBooking {
+    id: string;
+    roomId: string;
+    roomName: string;
+    capacity: number;
+    floor: number;
+    userId: string;
+    userEmail: string;
+    startTime: string;
+    endTime: string;
+    status: BookingStatus;
+}
+
+export interface AdminBookingFilters {
+    date: string;
+    roomId?: string;
+    userEmail?: string;
+    status?: BookingStatus;
+}
