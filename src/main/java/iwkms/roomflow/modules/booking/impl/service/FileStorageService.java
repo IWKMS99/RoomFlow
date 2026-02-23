@@ -33,8 +33,11 @@ public class FileStorageService {
         validateFile(file);
 
         String contentType = normalizeContentType(file.getContentType());
-        String extension =
-                contentType.equals("application/pdf") ? "pdf" : contentType.equals("image/png") ? "png" : "jpg";
+        String extension = switch (contentType) {
+            case "application/pdf" -> "pdf";
+            case "image/png" -> "png";
+            default -> "jpg";
+        };
         String key = "rooms/" + UUID.randomUUID() + "." + extension;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -46,7 +49,7 @@ public class FileStorageService {
         try {
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
         } catch (IOException ex) {
-            throw new InvalidFileException("Failed to read uploaded file");
+            throw new InvalidFileException("Failed to read uploaded file", ex);
         }
 
         return key;

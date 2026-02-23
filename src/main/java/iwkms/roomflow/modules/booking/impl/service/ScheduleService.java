@@ -103,7 +103,9 @@ public class ScheduleService {
                         entry.getKey(),
                         fileStorageService.generatePresignedUrl(entry.getValue().getFileKey()));
             } catch (RuntimeException ex) {
-                log.warn("Failed to generate cover URL for room {}: {}", entry.getKey(), ex.getMessage());
+                if (log.isWarnEnabled()) {
+                    log.warn("Failed to generate cover URL for room {}", entry.getKey(), ex);
+                }
             }
         }
         return coverUrls;
