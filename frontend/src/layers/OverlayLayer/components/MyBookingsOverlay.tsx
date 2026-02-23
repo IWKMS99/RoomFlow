@@ -1,3 +1,4 @@
+import {useMemo, useState} from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
 import {useNavigate} from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -11,6 +12,33 @@ import MagneticButton from '../../../components/motion/MagneticButton';
 import {getApiErrorMessage} from '../../../lib/httpError';
 import {motionPreset} from '../../../lib/motion';
 import {motionTokens} from '../../../lib/motionTokens';
+import PillToggle from '../../../components/ui/PillToggle';
+import StatusChip from '../../../components/ui/StatusChip';
+import type {BookingResponse, BookingStatus} from '../../../types/booking';
+
+type BookingTab = 'active' | 'history';
+
+const ACTIVE_STATUSES: BookingStatus[] = ['REQUESTED', 'CONFIRMED'];
+
+const statusLabelMap: Record<BookingStatus, string> = {
+  REQUESTED: 'В обработке',
+  CONFIRMED: 'Подтверждено',
+  COMPLETED: 'Завершено',
+  CANCELLED: 'Отменено',
+};
+
+const statusToneMap: Record<BookingStatus, 'warning' | 'active' | 'muted' | 'danger'> = {
+  REQUESTED: 'warning',
+  CONFIRMED: 'active',
+  COMPLETED: 'muted',
+  CANCELLED: 'danger',
+};
+
+const sortByStartAsc = (left: BookingResponse, right: BookingResponse) =>
+  new Date(left.startTime).getTime() - new Date(right.startTime).getTime();
+
+const sortByStartDesc = (left: BookingResponse, right: BookingResponse) =>
+  new Date(right.startTime).getTime() - new Date(left.startTime).getTime();
 
 const MyBookingsOverlay = () => {
   const {i18n} = useTranslation();
@@ -22,9 +50,25 @@ const MyBookingsOverlay = () => {
   const cameraPose = useHubStore((state) => state.cameraPose);
   const bookingsQuery = useMyBookingsQuery(isAuthenticated);
   const cancelMutation = useCancelBookingMutation(selectedDateKey);
-  const sortedBookings = [...(bookingsQuery.data ?? [])].sort(
-    (left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime()
+  const [activeTab, setActiveTab] = useState<BookingTab>('active');
+  const nowTs = Date.now();
+  const bookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data]);
+
+  const activeBookings = useMemo(
+    () =>
+      bookings
+        .filter((booking) => ACTIVE_STATUSES.includes(booking.status) && new Date(booking.endTime).getTime() >= nowTs)
+        .sort(sortByStartAsc),
+    [bookings, nowTs]
   );
+  const historyBookings = useMemo(
+    () =>
+      bookings
+        .filter((booking) => !ACTIVE_STATUSES.includes(booking.status) || new Date(booking.endTime).getTime() < nowTs)
+        .sort(sortByStartDesc),
+    [bookings, nowTs]
+  );
+  const visibleBookings = activeTab === 'active' ? activeBookings : historyBookings;
 
   if (!isAuthenticated) {
     return null;
@@ -75,40 +119,61 @@ const MyBookingsOverlay = () => {
                 Повторить
               </button>
             </div>
-          ) : sortedBookings.length === 0 ? (
+          ) : bookings.length === 0 ? (
             <p className="text-sm text-muted-foreground">Пока нет активных или исторических бронирований.</p>
           ) : (
-            <div className="grid gap-3 pb-1 md:grid-cols-2">
-              {sortedBookings.map((booking, idx) => {
-                const canCancel = booking.status === 'CONFIRMED' && new Date(booking.startTime).getTime() > Date.now();
-                return (
-                  <motion.article
-                    key={booking.id}
-                    layoutId={`booking-card-${booking.id}`}
-                    initial={reducedMotion ? false : {opacity: 0, y: 8}}
-                    animate={reducedMotion ? undefined : {opacity: 1, y: 0}}
-                    transition={reducedMotion ? motionPreset.quick : {delay: idx * 0.03, ...motionTokens.fade}}
-                    className="rounded-2xl border border-white/16 bg-card/70 p-4"
-                  >
-                    <p className="m-0 text-lg font-semibold text-foreground">{booking.roomName}</p>
-                    <p className="m-0 mt-1 text-sm text-muted-foreground">
-                      {new Date(booking.startTime).toLocaleDateString(locale)} •{' '}
-                      {new Date(booking.startTime).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}
-                    </p>
-                    <p className="m-0 mt-2 text-xs text-muted-foreground">Статус: {booking.status}</p>
+            <div>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <PillToggle active={activeTab === 'active'} groupId="my-bookings-tab" itemId="active" onClick={() => setActiveTab('active')}>
+                  Активные ({activeBookings.length})
+                </PillToggle>
+                <PillToggle active={activeTab === 'history'} groupId="my-bookings-tab" itemId="history" onClick={() => setActiveTab('history')}>
+                  Прошедшие/отменённые ({historyBookings.length})
+                </PillToggle>
+              </div>
 
-                    {canCancel && (
-                      <MagneticButton
-                        onClick={() => void handleCancel(booking.id)}
-                        disabled={cancelMutation.isPending}
-                        className="mt-3 rounded-lg border border-danger/45 bg-danger/20 px-3 py-1.5 text-xs font-semibold text-danger"
+              {visibleBookings.length === 0 ? (
+                <p className="pb-2 text-sm text-muted-foreground">
+                  {activeTab === 'active' ? 'Сейчас нет активных бронирований.' : 'Нет прошедших или отменённых бронирований.'}
+                </p>
+              ) : (
+                <div className="grid gap-3 pb-1 md:grid-cols-2">
+                  {visibleBookings.map((booking, idx) => {
+                    const canCancel = booking.status === 'CONFIRMED' && new Date(booking.startTime).getTime() > nowTs;
+                    return (
+                      <motion.article
+                        key={booking.id}
+                        layoutId={`booking-card-${booking.id}`}
+                        initial={reducedMotion ? false : {opacity: 0, y: 8}}
+                        animate={reducedMotion ? undefined : {opacity: 1, y: 0}}
+                        transition={reducedMotion ? motionPreset.quick : {delay: idx * 0.03, ...motionTokens.fade}}
+                        className="rounded-2xl border border-white/16 bg-card/70 p-4"
                       >
-                        {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}
-                      </MagneticButton>
-                    )}
-                  </motion.article>
-                );
-              })}
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <p className="m-0 text-lg font-semibold text-foreground">{booking.roomName}</p>
+                          <StatusChip tone={statusToneMap[booking.status]} label={statusLabelMap[booking.status]} />
+                        </div>
+                        <p className="m-0 mt-1 text-sm text-muted-foreground">
+                          {new Date(booking.startTime).toLocaleDateString(locale)} •{' '}
+                          {new Date(booking.startTime).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}
+                          {' - '}
+                          {new Date(booking.endTime).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}
+                        </p>
+
+                        {canCancel && (
+                          <MagneticButton
+                            onClick={() => void handleCancel(booking.id)}
+                            disabled={cancelMutation.isPending}
+                            className="mt-3 rounded-lg border border-danger/45 bg-danger/20 px-3 py-1.5 text-xs font-semibold text-danger"
+                          >
+                            {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}
+                          </MagneticButton>
+                        )}
+                      </motion.article>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
