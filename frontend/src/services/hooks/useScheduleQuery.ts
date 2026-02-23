@@ -15,6 +15,7 @@ export const useScheduleQuery = (selectedDate: Date) => {
   const query = useQuery({
     queryKey: queryKeys.schedule(dateKey),
     queryFn: () => fetchSchedule(dateKey),
+    placeholderData: (previousData) => previousData,
     staleTime: SCHEDULE_STALE_TIME,
     gcTime: SCHEDULE_GC_TIME,
     refetchInterval: SCHEDULE_REFETCH_INTERVAL,
