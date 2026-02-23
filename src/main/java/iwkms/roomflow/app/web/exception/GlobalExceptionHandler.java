@@ -3,6 +3,7 @@ package iwkms.roomflow.app.web.exception;
 import iwkms.roomflow.app.web.exception.dto.ErrorResponseDto;
 import iwkms.roomflow.app.web.exception.dto.ValidationErrorResponseDto;
 import iwkms.roomflow.exception.BookingConflictException;
+import iwkms.roomflow.exception.InvalidFileException;
 import iwkms.roomflow.exception.InvalidRefreshTokenException;
 import iwkms.roomflow.exception.RefreshTokenExpiredException;
 import iwkms.roomflow.exception.ResourceNotFoundException;
@@ -41,6 +42,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponseDto handleBookingConflictException(BookingConflictException ex) {
         return new ErrorResponseDto(HttpStatus.CONFLICT.value(), ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidFileException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponseDto handleInvalidFileException(InvalidFileException ex) {
+        return new ErrorResponseDto(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
     }
 
     @ExceptionHandler(BadCredentialsException.class)
