@@ -15,8 +15,13 @@ import {useScheduleQuery} from '../../../services/hooks/useScheduleQuery';
 import {useCreateBookingMutation} from '../../../services/hooks/useCreateBookingMutation';
 import {useMediaQuery} from '../../../hooks/useMediaQuery';
 import MagneticButton from '../../../components/motion/MagneticButton';
-import {getApiErrorMessage} from '../../../lib/httpError';
+import {getApiErrorMessage, getApiStatus} from '../../../lib/httpError';
 import {motionTokens} from '../../../lib/motionTokens';
+import {useRoomQuery} from '../../../services/hooks/useRoomQuery';
+import {useHolidaysQuery} from '../../../services/hooks/useHolidaysQuery';
+import SeoMeta from '../../../components/seo/SeoMeta';
+import {absoluteUrl} from '../../../lib/seo';
+import NotFoundPage from '../../../pages/NotFoundPage';
 
 const RoomDetailOverlay = () => {
   const {t, i18n} = useTranslation();
@@ -28,7 +33,7 @@ const RoomDetailOverlay = () => {
   const cameraPose = useHubStore((state) => state.cameraPose);
   const reducedMotion = useReducedMotion();
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
-  const guardToastRef = React.useRef(false);
+  const selectedDate = parseDateKey(selectedDateKey);
 
   const currentRoomId = activeRoomId ?? params.roomId ?? null;
   const lastRoomIdRef = React.useRef(currentRoomId);
@@ -37,7 +42,9 @@ const RoomDetailOverlay = () => {
   }
   const roomId = currentRoomId ?? lastRoomIdRef.current;
 
-  const schedule = useScheduleQuery(parseDateKey(selectedDateKey));
+  const schedule = useScheduleQuery(selectedDate);
+  const roomQuery = useRoomQuery(roomId);
+  const holidaysQuery = useHolidaysQuery(selectedDate.getFullYear(), 'RU');
   const [selectedRange, setSelectedRange] = React.useState<DirectSelectionRange | null>(null);
   const [nowTs, setNowTs] = React.useState(Date.now());
 
@@ -53,15 +60,25 @@ const RoomDetailOverlay = () => {
 
   const roomMeta = React.useMemo(() => {
     const firstRoom = roomModel.slots[0]?.rooms[0];
-    if (!firstRoom) return null;
+    if (firstRoom) {
+      return {
+        roomName: firstRoom.roomName,
+        floor: firstRoom.floor,
+        capacity: firstRoom.capacity,
+        coverImageUrl: firstRoom.coverImageUrl ?? null,
+      };
+    }
+    if (!roomQuery.data) return null;
     return {
-      roomName: firstRoom.roomName,
-      floor: firstRoom.floor,
-      capacity: firstRoom.capacity,
-      coverImageUrl: firstRoom.coverImageUrl ?? null,
+      roomName: roomQuery.data.name,
+      floor: roomQuery.data.floor,
+      capacity: roomQuery.data.capacity,
+      coverImageUrl: null,
     };
-  }, [roomModel.slots]);
+  }, [roomModel.slots, roomQuery.data]);
   const [imageError, setImageError] = React.useState(false);
+  const holidayDates = React.useMemo(() => new Set((holidaysQuery.data ?? []).map((item) => item.date)), [holidaysQuery.data]);
+  const isHolidaySelected = holidayDates.has(formatDateForApi(selectedDate));
 
   const updatedSecondsAgo = Math.max(0, Math.floor((nowTs - schedule.dataUpdatedAt) / 1000));
 
@@ -80,31 +97,19 @@ const RoomDetailOverlay = () => {
     setImageError(false);
   }, [roomId, selectedDateKey, roomMeta?.coverImageUrl]);
 
-  React.useEffect(() => {
-    if (!currentRoomId || schedule.isLoading || schedule.isError) return;
-    if (roomModel.slots.length > 0) {
-      guardToastRef.current = false;
-      return;
-    }
-
-    if (!guardToastRef.current) {
-      toast(t('roomDetail.roomNotFound'));
-      guardToastRef.current = true;
-    }
-
-    useHubStore.getState().exitRoom();
-    navigate({to: '/schedule', replace: true});
-  }, [navigate, currentRoomId, roomModel.slots.length, schedule.isError, schedule.isLoading, t]);
-
   const createMutation = useCreateBookingMutation(selectedDateKey, roomId ?? '');
 
   const handleBook = async () => {
     if (!selectedRange || !roomId) return;
+    if (isHolidaySelected) {
+      toast.error(t('booking.disable.holiday'));
+      return;
+    }
     try {
       await createMutation.mutateAsync({
         roomId,
-        startTime: formatLocalDateTime(parseDateKey(selectedDateKey), selectedRange.start),
-        endTime: formatLocalDateTime(parseDateKey(selectedDateKey), selectedRange.end),
+        startTime: formatLocalDateTime(selectedDate, selectedRange.start),
+        endTime: formatLocalDateTime(selectedDate, selectedRange.end),
       });
       toast.success(t('roomDetail.bookingCreated'));
       setSelectedRange(null);
@@ -114,12 +119,31 @@ const RoomDetailOverlay = () => {
   };
 
   if (!roomId) return null;
+  if (roomQuery.isError && [400, 404].includes(getApiStatus(roomQuery.error) ?? 0)) {
+    return <NotFoundPage />;
+  }
 
   const closeRoomDetail = () => {
     navigate({to: '/schedule'});
   };
 
+  const roomTitle = roomMeta?.roomName ?? t('roomDetail.fallbackRoomName');
+  const roomDescription = `${roomTitle}, ${t('roomDetail.floor', {floor: roomMeta?.floor ?? 0})}, ${t('roomDetail.capacity', {count: roomMeta?.capacity ?? 0})}`;
+  const canonicalUrl = absoluteUrl(`/schedule/room/${roomId}`);
+  const roomJsonLd = roomMeta
+    ? ({
+        '@context': 'https://schema.org',
+        '@type': 'Place',
+        name: roomMeta.roomName,
+        image: roomMeta.coverImageUrl ? [roomMeta.coverImageUrl] : undefined,
+        maximumAttendeeCapacity: roomMeta.capacity,
+        floorLevel: String(roomMeta.floor),
+      } as Record<string, unknown>)
+    : null;
+
   return (
+    <>
+    <SeoMeta title={`${roomTitle} | RoomFlow`} description={roomDescription} url={canonicalUrl} jsonLd={roomJsonLd} />
     <motion.div
       key="room-detail-overlay"
       data-cursor-scope="book"
@@ -133,7 +157,9 @@ const RoomDetailOverlay = () => {
 
       <motion.div
         layoutId={`room-card-${roomId}`}
+        layout="position"
         transition={{type: 'spring', stiffness: 280, damping: 24}}
+        style={{borderRadius: 40}}
         className="rf-modal relative flex max-h-[calc(100dvh-8.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-card/40 p-2 shadow-2xl backdrop-blur-3xl"
         onClick={(event) => event.stopPropagation()}
       >
@@ -202,7 +228,7 @@ const RoomDetailOverlay = () => {
                     </span>
                     <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-background/60 px-3 py-1.5 text-xs font-medium text-foreground backdrop-blur-md">
                       <Calendar size={14} className="text-primary/80" /> 
-                      {parseDateKey(selectedDateKey).toLocaleDateString(locale, {day: 'numeric', month: 'long'})}
+                      {selectedDate.toLocaleDateString(locale, {day: 'numeric', month: 'long'})}
                     </span>
                   </div>
                 )}
@@ -210,6 +236,11 @@ const RoomDetailOverlay = () => {
             </motion.div>
 
             {/* Content Body */}
+            {isHolidaySelected && (
+              <div className="rounded-[2rem] border border-white/20 bg-white/10 px-6 py-4 text-sm text-foreground backdrop-blur-md">
+                {t('roomDetail.holidayBanner')}
+              </div>
+            )}
             {schedule.isLoading ? (
               <div className="rounded-[2rem] border border-white/10 bg-white/5 px-6 py-8 text-center text-sm text-muted-foreground backdrop-blur-md">
                 {t('roomDetail.loadingSchedule')}
@@ -291,9 +322,9 @@ const RoomDetailOverlay = () => {
                       </button>
                       <MagneticButton
                         onClick={() => void handleBook()}
-                        data-cursor={!selectedRange || createMutation.isPending ? 'locked' : 'book'}
-                        data-cursor-text={!selectedRange || createMutation.isPending ? undefined : t('cursor.book')}
-                        disabled={!selectedRange || createMutation.isPending}
+                        data-cursor={!selectedRange || createMutation.isPending || isHolidaySelected ? 'locked' : 'book'}
+                        data-cursor-text={!selectedRange || createMutation.isPending || isHolidaySelected ? undefined : t('cursor.book')}
+                        disabled={!selectedRange || createMutation.isPending || isHolidaySelected}
                         className="w-1/2 rounded-2xl border border-primary/50 bg-primary/80 px-6 py-3 text-sm font-bold text-primary-foreground shadow-[0_0_20px_hsl(var(--primary)/0.4)] transition-all hover:bg-primary hover:shadow-[0_0_30px_hsl(var(--primary)/0.6)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:w-auto"
                       >
                         {createMutation.isPending ? t('roomDetail.bookingPending') : t('roomDetail.book')}
@@ -308,6 +339,7 @@ const RoomDetailOverlay = () => {
         </div>
       </motion.div>
     </motion.div>
+    </>
   );
 };
 

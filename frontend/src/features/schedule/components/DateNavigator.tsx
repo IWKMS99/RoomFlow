@@ -8,6 +8,7 @@ import {cn} from '../../../lib/utils';
 import {formatDateForApi, normalizeDate} from '../../../lib/datetime/dateKey';
 import {motionTokens} from '../../../lib/motionTokens';
 import {motionPreset} from '../../../lib/motion';
+import {useHolidaysQuery} from '../../../services/hooks/useHolidaysQuery';
 
 interface Props {
   selectedDate: Date;
@@ -20,6 +21,8 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
   const {i18n, t} = useTranslation();
   const reducedMotion = useReducedMotion();
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
+  const holidayQueryCurrentYear = useHolidaysQuery(selectedDate.getFullYear(), 'RU');
+  const holidayQueryNextYear = useHolidaysQuery(selectedDate.getFullYear() + 1, 'RU');
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const closeCalendar = React.useCallback(() => {
@@ -62,6 +65,23 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
   }, []);
 
   const isSelected = (date: Date) => formatDateForApi(date) === formatDateForApi(selectedDate);
+  const holidayDateSet = React.useMemo(
+    () =>
+      new Set([
+        ...(holidayQueryCurrentYear.data ?? []).map((h) => h.date),
+        ...(holidayQueryNextYear.data ?? []).map((h) => h.date),
+      ]),
+    [holidayQueryCurrentYear.data, holidayQueryNextYear.data]
+  );
+  const isHoliday = (date: Date) => holidayDateSet.has(formatDateForApi(date));
+  const isHolidayUnavailable = (date: Date) => isHoliday(date);
+  const holidayDates = React.useMemo(
+    () =>
+      Array.from(holidayDateSet)
+        .map((value) => new Date(`${value}T00:00:00`))
+        .filter((value) => !Number.isNaN(value.getTime())),
+    [holidayDateSet]
+  );
 
   return (
     <div className="relative flex w-full flex-col sm:w-auto sm:items-end" ref={containerRef}>
@@ -127,16 +147,22 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
         >
           {quickDates.map((date) => {
             const active = isSelected(date);
+            const holiday = isHoliday(date);
             return (
               <motion.button
                 layout
                 key={formatDateForApi(date)}
                 whileHover={reducedMotion || active ? {} : {y: -2}}
                 whileTap={reducedMotion ? {} : {scale: 0.85}}
-                onClick={() => onSelect(date)}
+                onClick={() => {
+                  if (isHolidayUnavailable(date)) return;
+                  onSelect(date);
+                }}
+                disabled={holiday}
                 className={cn(
                   'relative flex h-[50px] w-[46px] shrink-0 flex-col items-center justify-center rounded-[1.15rem]',
-                  active ? 'text-primary-foreground' : 'text-muted-foreground'
+                  active ? 'text-primary-foreground' : 'text-muted-foreground',
+                  holiday ? 'opacity-60' : ''
                 )}
                 transition={motionTokens.card}
               >
@@ -151,6 +177,7 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
                   {date.toLocaleDateString(locale, {weekday: 'short'})}
                 </span>
                 <span className="relative z-base text-[15px] font-bold">{date.getDate()}</span>
+                {holiday && <span className="relative z-base text-[9px] font-semibold text-danger">{t('calendar.holiday')}</span>}
               </motion.button>
             );
           })}
@@ -205,10 +232,13 @@ const DateNavigator = ({selectedDate, onSelect}: Props) => {
                 selected={selectedDate}
                 onSelect={(date) => {
                   if (!date) return;
+                  if (isHolidayUnavailable(normalizeDate(date))) return;
                   onSelect(normalizeDate(date));
                   closeCalendar();
                 }}
-                disabled={{before: normalizeDate(new Date())}}
+                disabled={[{before: normalizeDate(new Date())}, ...holidayDates]}
+                modifiers={{holiday: holidayDates}}
+                modifiersClassNames={{holiday: 'text-danger'}}
                 className="rf-day-picker text-foreground"
               />
             </div>
