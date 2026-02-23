@@ -4,6 +4,7 @@ import {Outlet, useLocation, useNavigate} from 'react-router-dom';
 import {motion} from 'framer-motion';
 import {useAuth} from '../context/useAuth';
 import {useRouteSceneSync} from '../hooks/useRouteSceneSync';
+import {useTheme} from '../hooks/useTheme';
 import {useHubStore} from '../store/useHubStore';
 import HubLayer from '../layers/HubLayer/HubLayer';
 import OverlayLayer from '../layers/OverlayLayer/OverlayLayer';
@@ -13,11 +14,11 @@ const Layout: React.FC = () => {
   const {isLoading, token} = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const {theme, toggleTheme} = useTheme();
 
   useRouteSceneSync();
 
   React.useEffect(() => {
-    document.documentElement.classList.remove('light');
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -46,8 +47,18 @@ const Layout: React.FC = () => {
     <div className="relative h-screen w-screen overflow-hidden bg-background text-foreground selection:bg-primary/30">
       <Toaster position="top-right" />
 
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black" />
-      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+      <div
+        className={`absolute inset-0 z-0 ${
+          theme === 'light'
+            ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-50 via-slate-100 to-slate-200'
+            : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black'
+        }`}
+      />
+      <div
+        className={`absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] ${
+          theme === 'light' ? 'opacity-60' : ''
+        }`}
+      />
 
       <motion.div
         className="relative z-10 h-full w-full"
@@ -62,7 +73,7 @@ const Layout: React.FC = () => {
       </motion.div>
 
       <OverlayLayer />
-      <NavigationLayer />
+      <NavigationLayer theme={theme} onToggleTheme={toggleTheme} />
 
       {location.pathname.startsWith('/booking/confirmed') ? (
         <div className="fixed inset-0 z-50 overflow-auto px-4 py-20">

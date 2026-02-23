@@ -50,6 +50,32 @@
   --radius-sm: 0.52rem;
 }
 
+.light {
+  --bg-0: 210 30% 97%;
+  --bg-1: 0 0% 100%;
+  --bg-2: 210 33% 94%;
+
+  --text-hi: 222 47% 12%;
+  --text-mid: 220 16% 40%;
+  --text-dim: 220 11% 52%;
+
+  --surface-glass-1: 0 0% 100% / 0.84;
+  --surface-glass-2: 210 44% 96% / 0.94;
+  --stroke-soft: 216 24% 68% / 0.26;
+  --stroke-strong: 213 80% 46% / 0.34;
+  --shadow-depth: 220 31% 34%;
+
+  --background: var(--bg-0);
+  --foreground: var(--text-hi);
+  --card: var(--bg-1);
+  --card-foreground: var(--text-hi);
+  --muted: var(--bg-2);
+  --muted-foreground: var(--text-mid);
+  --border: 215 28% 76%;
+  --input: 216 28% 84%;
+  --primary-foreground: 0 0% 100%;
+}
+
 * {
   box-sizing: border-box;
 }
