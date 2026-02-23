@@ -15,8 +15,6 @@ import RegisterPage from './pages/RegisterPage.tsx';
 import RoleProtectedRoute from './components/RoleProtectedRoute.tsx';
 import SceneRouteBridge from './pages/SceneRouteBridge.tsx';
 import {queryClient} from './services/queryClient.ts';
-import MyBookingsPage from './pages/MyBookingsPage.tsx';
-import AdminPage from './pages/AdminPage.tsx';
 
 const Devtools = import.meta.env.DEV
   ? React.lazy(() => import('@tanstack/react-query-devtools').then((module) => ({default: module.ReactQueryDevtools})))
@@ -57,7 +55,7 @@ const router = createBrowserRouter([
         children: [
           {
             path: 'my-bookings',
-            element: <MyBookingsPage />,
+            element: <SceneRouteBridge />,
           },
           {
             path: 'booking/confirmed',
@@ -70,7 +68,7 @@ const router = createBrowserRouter([
         children: [
           {
             path: 'admin',
-            element: <AdminPage />,
+            element: <SceneRouteBridge />,
           },
         ],
       },

@@ -64,12 +64,14 @@ const Layout: React.FC = () => {
       <OverlayLayer />
       <NavigationLayer />
 
-      {!location.pathname.startsWith('/schedule') && (
+      {location.pathname.startsWith('/booking/confirmed') ? (
         <div className="fixed inset-0 z-50 overflow-auto px-4 py-20">
           <div className="mx-auto max-w-6xl">
             <Outlet />
           </div>
         </div>
+      ) : (
+        <Outlet />
       )}
     </div>
   );
