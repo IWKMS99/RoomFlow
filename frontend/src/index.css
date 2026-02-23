@@ -48,21 +48,31 @@
   --radius-lg: 1.05rem;
   --radius-md: 0.78rem;
   --radius-sm: 0.52rem;
+
+  --stage-dark-top: 220 56% 12%;
+  --stage-dark-mid: 222 64% 7%;
+  --stage-dark-bottom: 224 72% 4%;
+  --stage-dark-grid: 208 30% 84% / 0.075;
+
+  --stage-light-top: 198 96% 92%;
+  --stage-light-mid: 209 58% 91%;
+  --stage-light-bottom: 214 40% 86%;
+  --stage-light-grid: 216 24% 52% / 0.16;
 }
 
 .light {
-  --bg-0: 210 30% 97%;
+  --bg-0: 208 52% 96%;
   --bg-1: 0 0% 100%;
-  --bg-2: 210 33% 94%;
+  --bg-2: 210 46% 93%;
 
-  --text-hi: 222 47% 12%;
-  --text-mid: 220 16% 40%;
-  --text-dim: 220 11% 52%;
+  --text-hi: 222 34% 14%;
+  --text-mid: 217 16% 35%;
+  --text-dim: 218 12% 48%;
 
   --surface-glass-1: 0 0% 100% / 0.84;
-  --surface-glass-2: 210 44% 96% / 0.94;
-  --stroke-soft: 216 24% 68% / 0.26;
-  --stroke-strong: 213 80% 46% / 0.34;
+  --surface-glass-2: 210 40% 94% / 0.94;
+  --stroke-soft: 214 26% 62% / 0.3;
+  --stroke-strong: 212 72% 48% / 0.38;
   --shadow-depth: 220 31% 34%;
 
   --background: var(--bg-0);
@@ -156,6 +166,38 @@ h3,
 .rf-bg-stage {
   position: relative;
   isolation: isolate;
+}
+
+.rf-stage-surface {
+  background:
+    radial-gradient(ellipse at top, hsl(var(--stage-top)) 0%, hsl(var(--stage-mid)) 44%, hsl(var(--stage-bottom)) 100%);
+}
+
+.rf-stage-surface--dark {
+  --stage-top: var(--stage-dark-top);
+  --stage-mid: var(--stage-dark-mid);
+  --stage-bottom: var(--stage-dark-bottom);
+}
+
+.rf-stage-surface--light {
+  --stage-top: var(--stage-light-top);
+  --stage-mid: var(--stage-light-mid);
+  --stage-bottom: var(--stage-light-bottom);
+}
+
+.rf-stage-grid {
+  background-image:
+    linear-gradient(to right, hsl(var(--stage-grid-color)) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--stage-grid-color)) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.rf-stage-grid--dark {
+  --stage-grid-color: var(--stage-dark-grid);
+}
+
+.rf-stage-grid--light {
+  --stage-grid-color: var(--stage-light-grid);
 }
 
 .rf-bg-stage::before {

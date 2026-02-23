@@ -10,7 +10,7 @@ import type {ThemeMode} from '../../hooks/useTheme';
 
 interface Props {
   theme: ThemeMode;
-  onToggleTheme: () => void;
+  onToggleTheme: (origin?: {x: number; y: number}) => void;
 }
 
 const NavigationLayer = ({theme, onToggleTheme}: Props) => {

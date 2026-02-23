@@ -1,20 +1,32 @@
 import React from 'react';
 import {Toaster} from 'react-hot-toast';
 import {Outlet, useLocation, useNavigate} from 'react-router-dom';
-import {motion} from 'framer-motion';
+import {AnimatePresence, LayoutGroup, motion, useReducedMotion} from 'framer-motion';
 import {useAuth} from '../context/useAuth';
 import {useRouteSceneSync} from '../hooks/useRouteSceneSync';
-import {useTheme} from '../hooks/useTheme';
+import {type ThemeMode, useTheme} from '../hooks/useTheme';
 import {useHubStore} from '../store/useHubStore';
 import HubLayer from '../layers/HubLayer/HubLayer';
 import OverlayLayer from '../layers/OverlayLayer/OverlayLayer';
 import NavigationLayer from '../layers/NavigationLayer/NavigationLayer';
+import {cn} from '../lib/utils';
+
+interface ThemeRippleState {
+  id: number;
+  x: number;
+  y: number;
+  radius: number;
+  nextTheme: ThemeMode;
+}
 
 const Layout: React.FC = () => {
   const {isLoading, token} = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const {theme, toggleTheme} = useTheme();
+  const reducedMotion = useReducedMotion();
+  const {theme, setTheme, toggleTheme} = useTheme();
+  const [themeRipple, setThemeRipple] = React.useState<ThemeRippleState | null>(null);
+  const timeoutsRef = React.useRef<number[]>([]);
 
   useRouteSceneSync();
 
@@ -34,6 +46,14 @@ const Layout: React.FC = () => {
     }
   }, [location, navigate, token]);
 
+  React.useEffect(
+    () => () => {
+      timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      timeoutsRef.current = [];
+    },
+    []
+  );
+
   if (isLoading) {
     return null;
   }
@@ -42,38 +62,90 @@ const Layout: React.FC = () => {
     location.pathname.includes('/room/') ||
     location.pathname.includes('/my-bookings') ||
     location.pathname.includes('/admin');
+  const handleThemeToggle = (origin?: {x: number; y: number}) => {
+    const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark';
+    if (reducedMotion || !origin) {
+      toggleTheme();
+      return;
+    }
+
+    const maxX = Math.max(origin.x, window.innerWidth - origin.x);
+    const maxY = Math.max(origin.y, window.innerHeight - origin.y);
+    const radius = Math.hypot(maxX, maxY) + 48;
+    const rippleId = Date.now();
+    const rippleDuration = 680;
+
+    setThemeRipple({id: rippleId, x: origin.x, y: origin.y, radius, nextTheme});
+
+    const applyTimeout = window.setTimeout(() => {
+      setTheme(nextTheme);
+    }, Math.round(rippleDuration * 0.72));
+    const clearTimeoutId = window.setTimeout(() => {
+      setThemeRipple((state) => (state?.id === rippleId ? null : state));
+    }, rippleDuration + 120);
+
+    timeoutsRef.current.push(applyTimeout, clearTimeoutId);
+  };
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-background text-foreground selection:bg-primary/30">
       <Toaster position="top-right" />
 
-      <div
-        className={`absolute inset-0 z-0 ${
-          theme === 'light'
-            ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-50 via-slate-100 to-slate-200'
-            : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black'
-        }`}
-      />
-      <div
-        className={`absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] ${
-          theme === 'light' ? 'opacity-60' : ''
-        }`}
-      />
+      <div className={cn('absolute inset-0 z-0 rf-stage-surface', theme === 'light' ? 'rf-stage-surface--light' : 'rf-stage-surface--dark')} />
+      <div className={cn('absolute inset-0 z-0 rf-stage-grid', theme === 'light' ? 'rf-stage-grid--light' : 'rf-stage-grid--dark')} />
 
-      <motion.div
-        className="relative z-10 h-full w-full"
-        animate={{
-          scale: isDetailView ? 0.965 : 1,
-          filter: isDetailView ? 'blur(12px) brightness(0.72)' : 'blur(0px) brightness(1)',
-          opacity: isDetailView ? 0.82 : 1,
-        }}
-        transition={{type: 'spring', stiffness: 240, damping: 26}}
-      >
-        <HubLayer />
-      </motion.div>
+      <AnimatePresence>
+        {themeRipple && (
+          <motion.div
+            key={themeRipple.id}
+            className="pointer-events-none absolute inset-0 z-[6]"
+            initial={{clipPath: `circle(0px at ${themeRipple.x}px ${themeRipple.y}px)`}}
+            animate={{clipPath: `circle(${themeRipple.radius}px at ${themeRipple.x}px ${themeRipple.y}px)`}}
+            exit={{opacity: 0}}
+            transition={{duration: 0.68, ease: [0.2, 0.92, 0.24, 1]}}
+          >
+            <div
+              className={cn(
+                'absolute inset-0 rf-stage-surface',
+                themeRipple.nextTheme === 'light' ? 'rf-stage-surface--light' : 'rf-stage-surface--dark'
+              )}
+            />
+            <div
+              className={cn(
+                'absolute inset-0 rf-stage-grid',
+                themeRipple.nextTheme === 'light' ? 'rf-stage-grid--light' : 'rf-stage-grid--dark'
+              )}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="absolute inset-0"
+              initial={{opacity: 0.44, scale: 0.88}}
+              animate={{opacity: 0, scale: 1.14}}
+              transition={{duration: 0.68, ease: 'easeOut'}}
+              style={{
+                background: `radial-gradient(circle at ${themeRipple.x}px ${themeRipple.y}px, hsl(var(--primary)/0.22), transparent 56%)`,
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <OverlayLayer />
-      <NavigationLayer theme={theme} onToggleTheme={toggleTheme} />
+      <LayoutGroup id="scene-shared-layout">
+        <motion.div
+          className="relative z-10 h-full w-full"
+          animate={{
+            scale: isDetailView ? 0.965 : 1,
+            filter: isDetailView ? 'blur(12px) brightness(0.72)' : 'blur(0px) brightness(1)',
+            opacity: isDetailView ? 0.82 : 1,
+          }}
+          transition={{type: 'spring', stiffness: 240, damping: 26}}
+        >
+          <HubLayer />
+        </motion.div>
+
+        <OverlayLayer />
+        <NavigationLayer theme={theme} onToggleTheme={handleThemeToggle} />
+      </LayoutGroup>
 
       {location.pathname.startsWith('/booking/confirmed') ? (
         <div className="fixed inset-0 z-50 overflow-auto px-4 py-20">

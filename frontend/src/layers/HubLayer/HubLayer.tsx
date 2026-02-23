@@ -61,7 +61,7 @@ const HubLayer = () => {
     <div className="h-full w-full overflow-y-auto p-6 md:p-12">
       <div className="mx-auto mb-10 flex max-w-7xl flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-white md:text-5xl">{t('hub.title')}</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">{t('hub.title')}</h1>
           <p className="mt-2 text-lg text-muted-foreground">{t('hub.subtitle')}</p>
         </div>
 
@@ -69,7 +69,7 @@ const HubLayer = () => {
           <button
             type="button"
             onClick={() => setCalendarOpen((current) => !current)}
-            className="rounded-lg border border-white/14 bg-white/8 px-4 py-2 text-sm font-medium text-white shadow-sm backdrop-blur-md"
+            className="rounded-lg border border-white/14 bg-background/40 px-4 py-2 text-sm font-medium text-foreground shadow-sm backdrop-blur-md transition hover:bg-background/56"
           >
             {formatDateForDisplay(selectedDate, i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
           </button>
@@ -93,7 +93,7 @@ const HubLayer = () => {
       </div>
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {isLoading && <div className="text-white">{t('hub.loading')}</div>}
+        {isLoading && <div className="text-foreground">{t('hub.loading')}</div>}
 
         {!isLoading && rooms.map((room) => (
           <motion.div
@@ -107,11 +107,11 @@ const HubLayer = () => {
             }}
             whileHover={{y: -4}}
             whileTap={{scale: 0.995}}
-            className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[inset_0_1px_0_hsl(var(--text-hi)/0.12),0_22px_54px_-34px_hsl(var(--shadow-depth)/0.94)] backdrop-blur-[20px] transition-colors hover:border-primary/40 hover:bg-white/10"
+            className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-card/38 p-6 shadow-[inset_0_1px_0_hsl(var(--text-hi)/0.12),0_22px_54px_-34px_hsl(var(--shadow-depth)/0.94)] backdrop-blur-[20px] transition-colors hover:border-primary/40 hover:bg-card/56"
           >
             <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_1px_20px_hsl(var(--glow-2)/0.1)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <div className="mb-4 flex items-start justify-between">
-              <div className="rf-tabular rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <div className="rf-tabular rounded-full border border-white/10 bg-background/24 px-3 py-1 text-xs font-medium text-muted-foreground">
                 {room.floor} этаж
               </div>
               {room.availableSlots > 0 ? (
@@ -124,7 +124,7 @@ const HubLayer = () => {
             <motion.h3
               layoutId={`room-title-${room.roomId}`}
               transition={motionTokens.card}
-              className="text-xl font-bold text-white transition-colors group-hover:text-primary"
+              className="text-xl font-bold text-foreground transition-colors group-hover:text-primary"
             >
               {room.roomName}
             </motion.h3>
