@@ -58,16 +58,31 @@ const RegisterPage: React.FC = () => {
 
   return (
     <motion.div
+      layoutId="auth-panel-shell"
       initial={reducedMotion ? false : {opacity: 0, y: 18, scale: 0.98}}
       animate={reducedMotion ? undefined : {opacity: 1, y: 0, scale: 1}}
       transition={motionPreset.springGentle}
       className="rf-modal relative w-full max-w-md overflow-hidden rounded-[1.75rem] p-7 md:p-8"
     >
+      <motion.div
+        aria-hidden="true"
+        layoutId="auth-panel-sheen"
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          background:
+            'linear-gradient(120deg, transparent 0%, hsl(var(--glow-2)/0.14) 34%, hsl(var(--accent-mint)/0.14) 56%, transparent 78%)',
+          backgroundSize: '220% 220%',
+        }}
+        animate={reducedMotion ? undefined : {backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']}}
+        transition={reducedMotion ? motionPreset.quick : {duration: 7.5, ease: 'easeInOut', repeat: Infinity}}
+      />
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/75 to-transparent" />
-      <p className="rf-meta m-0 text-[11px] text-muted-foreground">RoomFlow setup</p>
-      <h1 className="rf-display mb-6 mt-2 text-3xl font-bold">{t('auth.registerTitle')}</h1>
+      <div className="relative">
+        <p className="rf-meta m-0 text-[11px] text-muted-foreground">RoomFlow setup</p>
+        <h1 className="rf-display mb-6 mt-2 text-3xl font-bold">{t('auth.registerTitle')}</h1>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="relative space-y-4">
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             Email
@@ -109,17 +124,19 @@ const RegisterPage: React.FC = () => {
 
         {error && <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
 
-        <NeonButton type="submit" disabled={isSubmitting} className="w-full" size="lg">
-          {isSubmitting ? t('auth.registerSubmitPending') : t('auth.registerSubmit')}
-        </NeonButton>
+        <motion.div layoutId="auth-submit-slot" transition={motionPreset.springGentle}>
+          <NeonButton type="submit" disabled={isSubmitting} className="w-full" size="lg">
+            {isSubmitting ? t('auth.registerSubmitPending') : t('auth.registerSubmit')}
+          </NeonButton>
+        </motion.div>
       </form>
 
-      <p className="mb-0 mt-4 text-center text-sm text-muted-foreground">
+      <motion.p layoutId="auth-switch-row" transition={motionPreset.springGentle} className="relative mb-0 mt-4 text-center text-sm text-muted-foreground">
         {t('auth.haveAccount')}{' '}
         <Link to="/login" className="font-semibold text-primary">
           {t('auth.loginLink')}
         </Link>
-      </p>
+      </motion.p>
     </motion.div>
   );
 };
