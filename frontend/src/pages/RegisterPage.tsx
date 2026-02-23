@@ -66,15 +66,14 @@ const RegisterPage: React.FC = () => {
     >
       <motion.div
         aria-hidden="true"
-        layoutId="auth-panel-sheen"
+        initial={reducedMotion ? false : {opacity: 0}}
+        animate={reducedMotion ? undefined : {opacity: 0.62}}
+        transition={reducedMotion ? motionPreset.quick : motionPreset.smooth}
         className="pointer-events-none absolute inset-0 opacity-60"
         style={{
           background:
-            'linear-gradient(120deg, transparent 0%, hsl(var(--glow-2)/0.14) 34%, hsl(var(--accent-mint)/0.14) 56%, transparent 78%)',
-          backgroundSize: '220% 220%',
+            'radial-gradient(circle at 16% 18%, hsl(var(--glow-2)/0.16), transparent 44%), radial-gradient(circle at 82% 14%, hsl(var(--accent-mint)/0.14), transparent 44%), linear-gradient(165deg, hsl(var(--surface-glass-1)/0.38), transparent 62%)',
         }}
-        animate={reducedMotion ? undefined : {backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']}}
-        transition={reducedMotion ? motionPreset.quick : {duration: 7.5, ease: 'easeInOut', repeat: Infinity}}
       />
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/75 to-transparent" />
       <div className="relative">
