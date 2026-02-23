@@ -1,6 +1,8 @@
 import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
 import type {AdminBooking, AdminBookingFilters, BookingResponse, CreateBookingPayload, ScheduleView} from '../types/booking.ts';
 import type {AuthUser} from '../types/user.ts';
+import type {Holiday} from '../types/holiday.ts';
+import type {PublicRoom} from '../types/room.ts';
 import type {
     AdminRoom,
     AdminRoomsFilters,
@@ -149,6 +151,18 @@ export const setupInterceptors = ({getAccessToken, setAccessToken, onUnauthorize
 export const fetchSchedule = async (date: string): Promise<ScheduleView> => {
     const response = await apiClient.get<ScheduleView>('/schedule', {
         params: {date},
+    });
+    return response.data;
+};
+
+export const getRoomById = async (roomId: string): Promise<PublicRoom> => {
+    const response = await apiClient.get<PublicRoom>(`/rooms/${roomId}`);
+    return response.data;
+};
+
+export const getHolidays = async (year: number, country = 'RU'): Promise<Holiday[]> => {
+    const response = await apiClient.get<Holiday[]>('/holidays', {
+        params: {year, country},
     });
     return response.data;
 };
