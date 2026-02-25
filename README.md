@@ -5,37 +5,41 @@
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.6-green?style=for-the-badge&logo=spring)
 ![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=for-the-badge&logo=postgresql)
+![MinIO](https://img.shields.io/badge/MinIO-S3-red?style=for-the-badge&logo=minio)
 ![Docker](https://img.shields.io/badge/Docker-ready-blue?style=for-the-badge&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-brightgreen?style=for-the-badge)
 
-**RoomFlow** — это веб-приложение для удобного бронирования переговорных комнат в офисе. Оно позволяет пользователям просматривать расписание занятости, создавать новые бронирования и управлять уже существующими.
+**RoomFlow** — это современное веб-приложение для удобного бронирования переговорных комнат в офисе. Оно предоставляет интерактивное визуальное расписание, продвинутую панель администратора и интеграции для защиты от конфликтов (включая государственные праздники).
 
 ## 🚀 Основные возможности
 
-*   **Аутентификация пользователей:** Регистрация и вход с использованием JWT.
-*   **Журнал занятости:** Визуальное представление расписания всех комнат по часам на выбранную дату.
-*   **Создание бронирований:** Простой интерфейс для выбора даты, времени и доступной комнаты.
-*   **Управление бронированиями:** Просмотр списка своих активных и прошедших бронирований, возможность отмены.
-*   **Валидация:** Проверка на конфликты бронирования и корректность вводимых данных на стороне бэкенда.
+*   **Интерактивное расписание:** Визуальное представление занятости комнат (Drag-to-select для выбора времени), защита от накладок и проверки лимитов бронирования.
+*   **Панель администратора (RBAC):** Управление переговорными комнатами (CRUD), модерация пользователей (назначение ролей), управление всеми бронированиями в системе.
+*   **Хранилище файлов (S3):** Загрузка изображений переговорных комнат и PDF-документов через MinIO. Изображения автоматически подтягиваются в карточки комнат.
+*   **Интеграция с календарем праздников:** Интеграция с внешним API (Nager.Date) для автоматического запрета бронирований в нерабочие/праздничные дни (защищено Circuit Breaker паттерном).
+*   **Продвинутый UX/UI:** Spatial UI интерфейс, плавные морфинг-анимации на базе `framer-motion`, светлая/темная темы, интернационализация (EN/RU).
+*   **SEO-оптимизация:** Динамические мета-теги, JSON-LD микроразметка и автоматически генерируемый `sitemap.xml`.
 
 <details>
 <summary><strong>🛠️ Стек технологий</strong></summary>
 
 ### Backend
 -   **Язык:** Java 24
--   **Фреймворк:** Spring Boot 3
--   **Доступ к данным:** Spring Data JPA (Hibernate)
--   **База данных:** PostgreSQL
--   **Миграции БД:** Flyway
--   **Безопасность:** Spring Security (JWT)
+-   **Фреймворк:** Spring Boot 3.5.6
+-   **Доступ к данным:** Spring Data JPA (Hibernate), PostgreSQL 16, Flyway
+-   **Хранилище файлов:** MinIO (AWS S3 SDK)
+-   **Безопасность:** Spring Security, JWT (Access + HttpOnly Refresh Cookie)
+-   **Интеграции:** RestClient, Resilience4j (CircuitBreaker, Retry), Caffeine Cache
 -   **API документация:** OpenAPI (Swagger UI)
--   **Сборка:** Gradle
 -   **Качество кода:** SpotBugs, PMD, Spotless
 
 ### Frontend
--   **Библиотека:** React 19 (с использованием TypeScript)
--   **Роутинг:** React Router
--   **HTTP-клиент:** Axios
+-   **Библиотека:** React 19 (TypeScript)
+-   **Архитектура и Стейт:** Feature-Sliced Design (частично), Zustand, React Query
+-   **Роутинг:** TanStack Router
+-   **Стилизация:** Tailwind CSS, clsx, tailwind-merge
+-   **Анимации:** Framer Motion, @use-gesture/react
+-   **Утилиты:** Zod, React Hook Form, i18next
 -   **Сборка:** Vite
 
 ### DevOps
@@ -47,13 +51,7 @@
 
 ## 🏗️ Архитектура
 
-Проект представляет собой монолитное бэкенд-приложение на Spring Boot, которое предоставляет REST API. Бэкенд построен по модульному принципу (`booking`, `user`) для лучшего разделения логики.
-
-Фронтенд — это приложение на React, которое взаимодействует с бэкендом по API.
-
-В production-окружении используется Nginx, который выполняет две функции:
-1.  Отдает статичные файлы фронтенда.
-2.  Выступает в роли reverse proxy для всех запросов к API (`/api`), перенаправляя их на бэкенд-приложение.
+Проект представляет собой SPA-приложение на React, взаимодействующее с монолитным Spring Boot REST API. В качестве базы данных используется PostgreSQL, а для хранения медиафайлов поднято локальное S3-совместимое хранилище — MinIO.
 
 ```mermaid
 graph TD
@@ -65,95 +63,101 @@ graph TD
         Nginx[Nginx]
         App[Spring Boot App]
         DB[(PostgreSQL)]
+        S3[(MinIO / S3)]
     end
+    
+    External[Nager.Date API<br>Календарь праздников]
 
     Browser -- "HTTP :8080" --> Nginx
     Nginx -- "Отдача статики" --> Browser
-    Nginx -- "Проксирование /api/* на app:8080" --> App
+    Nginx -- "Проксирование /api/*" --> App
+    Browser -- "Запрос изображений" --> S3
+    
     App -- "JDBC (app -> db:5432)" --> DB
+    App -- "S3 SDK" --> S3
+    App -- "REST" --> External
 ```
 
 ## 📋 Требования для запуска
 
 -   [Docker](https://www.docker.com/get-started) и Docker Compose
--   [Node.js](https://nodejs.org/) v20+ и npm
--   [JDK](https://www.oracle.com/java/technologies/downloads/) 24 (для запуска бэкенда вне Docker)
+-   [Node.js](https://nodejs.org/) v20+ и npm (для локальной разработки)
+-   [JDK](https://www.oracle.com/java/technologies/downloads/) 24 (для сборки/запуска бэкенда вне Docker)
 
 ## ⚙️ Запуск проекта
 
-### 1. Подготовка
-1.  Клонируйте репозиторий:
-    ```bash
-    git clone https://github.com/IWKMS99/RoomFlow.git
-    cd RoomFlow
-    ```
-
-2.  Создайте файл `.env` в корне проекта, скопировав содержимое из `.env.example`.
-    ```bash
-    Можно использовать команду 'cp .env.example .env' в Linux/macOS
-    или 'copy .env.example .env' в Windows
-    ```
+### 1. Подготовка конфигурации
+Клонируйте репозиторий и настройте переменные окружения:
+```bash
+git clone https://github.com/IWKMS99/RoomFlow.git
+cd RoomFlow
+cp .env.example .env
+```
+*(В файле `.env` укажите пароли для PostgreSQL, MinIO и секретный ключ JWT).*
 
 ### 2. Режим разработки (Development)
 
-В этом режиме бэкенд и база данных запускаются в Docker, а фронтенд — локально с помощью Vite для удобства разработки и hot-reload.
+В dev-режиме бэкенд, база данных и MinIO запускаются в Docker, а фронтенд работает локально с помощью Vite (с hot-reload).
 
-1.  **Запустите бэкенд и базу данных:**
+1.  **Поднимите бэкенд и инфраструктуру:**
     ```bash
     docker-compose up --build
     ```
-    Бэкенд будет доступен по адресу `http://localhost:8081`.
+    * Бэкенд доступен по адресу: `http://localhost:8081`
+    * MinIO Console (Файловое хранилище): `http://localhost:9001` (Креды из `.env`)
 
-2.  **Запустите фронтенд (в новом терминале):**
+2.  **Запустите фронтенд (в новом окне терминала):**
     ```bash
     cd frontend
     npm install
     npm run dev
     ```
-    Фронтенд будет доступен по адресу, который укажет Vite (обычно `http://localhost:5173`).
+    Фронтенд будет доступен по адресу `http://localhost:5173`.
 
 ### 3. Режим продакшена (Production)
 
-В этом режиме все компоненты (база данных, бэкенд, фронтенд с Nginx) запускаются в Docker-контейнерах.
+Запускает всё приложение (включая собранный фронтенд, отдаваемый через Nginx) в изолированной Docker-сети.
 
 1. **Запустите все сервисы:**
     ```bash
     docker-compose -f docker-compose.prod.yml up --build -d
     ```
-    Приложение будет доступно по адресу `http://localhost:8080`.
+   Приложение будет полностью доступно по адресу `http://localhost:8080`.
 
-2. **Для просмотра логов:**
-    ```bash
-    docker-compose -f docker-compose.prod.yml logs -f
-    ```
-
-3. **Для остановки сервисов:**
+2. **Остановка сервисов:**
     ```bash
     docker-compose -f docker-compose.prod.yml down
     ```
 
+---
+
+*💡 **Подсказка:** При первом запуске скрипты миграций Flyway автоматически создадут дефолтного администратора.*
+* **Email:** `admin@roomflow.local`
+* **Пароль:** `admin123`
+
 ## ✅ Качество кода и Тестирование
 
-Проект использует статические анализаторы для поддержания высокого качества кода.
+Проект активно использует статические анализаторы и тесты (Playwright для e2e, Vitest для frontend, JUnit + Testcontainers для интеграционных тестов backend).
 
--   **Запуск всех проверок (анализаторы + тесты):**
-    ```bash
-    ./gradlew check
-    ```
--   **Запуск только интеграционных тестов:**
-    ```bash
-    ./gradlew test
-    ```
--   **Форматирование кода:**
-    ```bash
-    ./gradlew spotlessApply
-    ```
+**Backend (Gradle):**
+```bash
+./gradlew check         # Запуск линтеров (SpotBugs, PMD) и автотестов
+./gradlew spotlessApply # Форматирование кода по стандартам Palantir
+```
+
+**Frontend (NPM):**
+```bash
+npm run test            # Юнит-тестирование (Vitest)
+npm run lint            # Проверка ESLint
+npm run test:e2e        # Запуск E2E тестов (Playwright)
+```
 
 ## 📚 API Документация
 
-После запуска бэкенда (в любом режиме) документация API доступна через Swagger UI.
--   В **dev-режиме**: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
--   В **prod-режиме** документация доступна внутри Docker-сети, но не выставлена наружу через Nginx.
+В режиме разработки документация API (OpenAPI 3) и удобный UI для тестирования ручек доступны встроенными средствами Swagger:
+- Swagger UI: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+
+Фронтенд автоматически генерирует API-клиент (`orval`) на основе этой схемы (см. `npm run generate:api`).
 
 ## 📄 Лицензия
 
