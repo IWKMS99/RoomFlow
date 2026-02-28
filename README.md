@@ -65,14 +65,14 @@ graph TD
         DB[(PostgreSQL)]
         S3[(MinIO / S3)]
     end
-    
+
     External[Nager.Date API<br>Календарь праздников]
 
     Browser -- "HTTP :8080" --> Nginx
     Nginx -- "Отдача статики" --> Browser
     Nginx -- "Проксирование /api/*" --> App
     Browser -- "Запрос изображений" --> S3
-    
+
     App -- "JDBC (app -> db:5432)" --> DB
     App -- "S3 SDK" --> S3
     App -- "REST" --> External
