@@ -47,8 +47,30 @@ const mockAuthMe = async (page: Page, roles: string[], email = 'user@roomflow.lo
 };
 
 test.beforeEach(async ({page}) => {
+  await page.route('**/api/v1/holidays**', async (route) => {
+    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify([])});
+  });
+
   await page.route('**/api/v1/schedule**', async (route) => {
     await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify(scheduleResponse)});
+  });
+
+  await page.route('**/api/v1/rooms/*', async (route) => {
+    const roomId = route.request().url().split('/').pop();
+    if (roomId === 'room-a') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({id: 'room-a', name: 'Комната A', floor: 2, capacity: 8}),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({message: 'Room not found'}),
+    });
   });
 
   await page.route('**/api/v1/auth/refresh', async (route) => {
@@ -58,12 +80,27 @@ test.beforeEach(async ({page}) => {
   await page.route('**/api/v1/admin/bookings**', async (route) => {
     await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify([])});
   });
+
+  await page.route('**/api/v1/admin/rooms**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        content: [{id: 'room-a', name: 'Комната A', floor: 2, capacity: 8, isActive: true}],
+        page: 0,
+        size: 10,
+        totalElements: 1,
+        totalPages: 1,
+        sort: 'name,asc',
+      }),
+    });
+  });
 });
 
 test('schedule page renders visible room field content', async ({page}) => {
   await page.goto('/schedule');
   await expect(page.getByRole('heading', {name: 'Бронирование'})).toBeVisible();
-  await expect(page.getByRole('button', {name: /\d{4}/})).toBeVisible();
+  await expect(page.getByRole('button', {name: 'Выбрать дату в календаре'})).toBeVisible();
   await expect(page.locator('[data-room-id="room-a"]').first()).toBeVisible();
 });
 
@@ -106,9 +143,10 @@ test('route /schedule/room/:id opens room detail flow and can return', async ({p
   await expect(page).toHaveURL('/schedule');
 });
 
-test('invalid room deep-link redirects back to /schedule', async ({page}) => {
+test('invalid room deep-link shows empty state in room overlay', async ({page}) => {
   await page.goto('/schedule/room/unknown-room');
-  await expect(page).toHaveURL('/schedule');
+  await expect(page).toHaveURL('/schedule/room/unknown-room');
+  await expect(page.getByRole('heading', {name: 'Нет данных по комнате'})).toBeVisible();
 });
 
 test('my-bookings deep-link renders overlay in scene runtime', async ({page}) => {
@@ -199,7 +237,8 @@ test('admin deep-link renders overlay for admin user', async ({page}) => {
 
   await page.goto('/admin');
   await expect(page).toHaveURL('/admin');
-  await expect(page.getByText('God Mode')).toBeVisible();
+  await expect(page.getByText('Админ-панель')).toBeVisible();
+  await page.getByRole('button', {name: 'Бронирования'}).click();
   await expect(page.getByText('member@roomflow.local').first()).toBeVisible();
   await page.getByRole('button', {name: 'Отменить'}).first().click();
 });
